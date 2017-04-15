@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
