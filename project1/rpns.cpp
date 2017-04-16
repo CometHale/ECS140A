@@ -1,8 +1,8 @@
-#include <cstdio>
 #include <stdio.h>
 #include <iostream>
 #include <string>
-
+#include <stdexcept>
+#include <exception>
 #include <stack>
 #include <algorithm>
 
@@ -13,141 +13,270 @@ using namespace std;
 // Invalid number of operands!
 // Operand out of range!
 
-string concatenate(string arg1, string arg2);
 
-string concatenate(string arg1, string arg2){
-	string concated = "";
+/*
+Test Cases
 
-	concated.append(arg1);
-	concated.append(arg2);
+concatenate():
+a
+b
+~
 
-	return concated;
-}//concatenate (~)
-//takes the two strings that are on the stack and combines them
-
-// int left(stack<string> stacc){
-
-// 	return 0;
-// }//left(<-)
-// // returns the first or last N characters of the string 
-
-// int right(stack<string> stacc){
-
-// 	return 0;
-// }//right(->)
-// // returns the first or last N characters of the string 
+1
+a
+~
 
 
-// int len_func(stack<string> stacc){
 
-// 	return 0;
-// }//len(#)
-// // replaces the stiring on the top of the stack with the length of the string
+add():
+floating point addition
+negative numbers
 
-// int find_func(stack<string> stacc){
 
-// 	return 0;
-// }//find(?)
-// // finds the first occurrence of the substring in the string (zero indexed)
-// // top of the stack is the string being searched, second string represents
-// //the substring being searched for
+*/
 
-// int add(stack<string> stacc){
+int string_manip();
+int list_option(stack<string> stacc, int indent_num);
 
-// 	return 0;
-// }//add(+)
-// //takes the two top strings and interprets them as integers for the addition
 
-// int subtract(stack<string> stacc){
 
-// 	return 0;
-// }//subtract(-)
-// //takes the two top strings and interprets them as integers for the subtraction
-// //second value on the stack will be subtracted from the top value of the stack
+int string_manip(){
+	stack<string> args;
+	string inp,arg1,arg2,result = " ";
 
-int string_manip(stack<string> main_stack){
-	while(!main_stack.empty()){
-
-		string cur_char = main_stack.top();
-		main_stack.pop();
-
-		if(cur_char.compare("~") == 0){
+	// non-arg
+	while(getline(cin,inp) && !inp.empty()){
+		
+		if(inp.compare("~") == 0){ //concatenate
+			//takes the two strings that are on the stack and combines them
 
 			//grab the arguments
-			if(main_stack.size() < 2){
-				cout << "Error: Invalid number of operands!";
-				main_stack.
-				break;
+			if(args.size() < 2){
+				cout << "Error: Invalid number of operands!" << endl;
+				exit(-1);
 			}
 
-			string arg1 = main_stack.top();
-			main_stack.pop();
-			string arg2 = main_stack.top();
-			main_stack.pop();
+			arg1 = args.top();
+			args.pop();
+			arg2 = args.top();
+			args.pop();
 
+			args.push(arg1.append(arg2));
 
-			main_stack.push(concatenate(arg1,arg2));
+			// args.push(concatenate(arg1,arg2));
+
 		}
 
-		// // else if(top.compare("<-") == 0){
-		// // 	// left()
-		// // }
+		else if(inp.compare("<-") == 0 || inp.compare("->") == 0 ){// left() and right()
+			//returns the first N characters from the beginning or end of the string
+			//on top of the stack
 
-		// // else if(top.compare("->") == 0){
-		// // 	// right()
-		// // }
+			string str = args.top();
+			args.pop();
 
-		// // else if(top.compare("#") == 0){
-		// // 	// len()
-		// // }
+			try{
+				int operand = stoi(args.top());
+				args.pop();
+				
 
-		// // else if(top.compare("?") == 0){
-		// // 	// find()
-		// // }
+				if(operand > static_cast<int>(str.size())){
+					cout << "Error: Operand out of range!";
+					exit(-1);
+				}
+				else{
 
-		// // else if(top.compare("+") == 0){
-		// // 	// add()
-		// // }
+					if(inp.compare("<-") == 0){
+						args.push(str.substr(0,operand));
+					}
+					else{
+						args.push(str.substr(str.size() - operand));
+					}
+					
+				}
 
-		// // else if(top.compare("-") == 0){
-		// // 	// subtract()
-		// // }
-	}
+			} catch(invalid_argument & ia) {
+				cout << "Error: Operand not an integer!" << endl;
+			}
+			
+		}
+ 
+		else if(inp.compare("#") == 0){// len()
+			string tmp = args.top();
+			args.pop();
+			args.push(to_string(tmp.size()));
+		}
 
-	cout << main_stack.top() << endl;
-	// need to not return anything if an error happens
-	return 0;
-}
+		else if(inp.compare("?") == 0){// find()
 
-// int list_option(stack<string> main_stack){
-// 	return 0;
-// }
+			string str_to_search = args.top();
+			args.pop();
 
-int main(int argc, char const *argv[])
-{
-	
-	stack<string> main_stack;
-	string inp = " ";
+			string query = args.top();
+			args.pop();
+
+			if(str_to_search.size() < query.size()){
+				args.push(to_string(-1));
+			}
+			else{
+				args.push(to_string(str_to_search.find(query)));
+			}
+			
+		}
+
+		else if(inp.compare("+") == 0 || inp.compare("-") == 0 ){ // add and subtract
+
+			if(args.size() < 2){
+				cout << "Error: Invalid number of operands!" << endl;
+				exit(-1);
+			}
+			
+			arg1 = args.top();
+			args.pop();
+			arg2 = args.top();
+			args.pop();
 
 
-	// Get input and fill the stack
-	while(getline(cin,inp)){
-	
-		if(inp.empty() != 1){
+			try{
 
+				int val1 = stoi(arg1);
+				int val2 = stoi(arg2);
+
+				if(inp.compare("+") == 0){
+					args.push(to_string(val1 + val2));
+				}else{
+					args.push(to_string(val1 - val2));
+				}
+				
+
+			}catch(invalid_argument & ia){
+				cout << "Error: Operand not an integer!" << endl;
+			}
+
+		}
+
+		else{
 			transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
 			//utilized: 
 			//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
-			main_stack.push(inp);
+			args.push(inp);
+		}
 
-		}
-		else{
-			break;
-		}
-		
 	}
 
+	cout << args.top() << endl;
+
+	return 0;
+}
+
+int list_option(stack<string> stacc, int indent_num){
+
+
+	if(stacc.empty()){
+		cout << ")" << endl;
+		return 0;
+	}
+
+	string operators = "~ <- -> # ? + -";
+
+	string top_str = stacc.top();
+	stack<string> args;
+	int num_args = 2; // all but # have 2 args
+
+	if(top_str.compare("#") == 0){
+		num_args = 1;
+	}
+
+	if(operators.find(top_str) != operators.npos){ // top_str is an operator
+		stacc.pop();
+		for(int i = 0; i < indent_num; i++){
+				cout << "    ";
+		}
+		cout << "(" << top_str << endl;
+		
+
+		
+		for(int i = 0; i < indent_num; i++){
+				cout << "    ";
+		}
+		cout << ")" << endl;
+
+		// return list_option(stacc, indent_num + 1);
+
+
+		// if(top_str.compare("#") == 0){ // # only has one input
+		// 	for(int i = 0; i < indent_num; i++){
+		// 		cout << "    ";
+		// 	}
+		// 	cout << stacc.top();
+		// 	stacc.pop();
+		// 	cout << endl;
+		// 	for(int i = 0; i < indent_num - 1; i++){
+		// 		cout << "    ";
+		// 	}
+		// 	cout << ")" << endl;
+
+		// 	// return list_option(stacc, indent_num);
+		// }
+		// else{
+			// while(!stacc.empty()){
+
+			// 	for(int i = 0; i < indent_num; i++){
+			// 		cout << "    ";
+			// 	}
+			// 	if (operators.find(stacc.top()) == operators.npos)
+			// 	{
+					
+			// 		cout << stacc.top() << endl;
+			// 		stacc.pop();
+			// 		// args.pop(stacc.top());
+			// 		// stacc.pop();
+					
+			// 	}
+			// 	else{
+			// 		return list_option(stacc, indent_num + 1);
+					
+			// 	}
+				
+			// }
+
+			// for(int i = 0; i < indent_num - 1; i++){
+			// 	cout << "    ";
+			// }
+
+			// cout << ")" << endl;
+		// }
+		
+	}
+	else{
+		stacc.pop();
+	}
+
+
+
+	return list_option(stacc, indent_num + 1);
+}
+
+// int argc, char const *argv[]
+int main(int argc, char const *argv[]){
 	
-	//check for -l option
+	if(argc > 1){
+		if(strcmp(argv[1],"-l") == 0){
+
+			stack<string> stacc;
+			string inp = " ";
+
+			while(getline(cin,inp) && !inp.empty()){
+				transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
+				//utilized: 
+				//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+				stacc.push(inp);
+			}
+			
+			list_option(stacc, 0);
+		}
+	}
+	else{
+		string_manip();
+	}
 	return 0;
 }
