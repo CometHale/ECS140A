@@ -13,71 +13,76 @@ using namespace std;
 // Invalid number of operands!
 // Operand out of range!
 
+void string_manip(stack<string> & stacc, stack<string> & extra);
+void list_option(stack<string> & stacc, int indent_num);
 
-/*
-Test Cases
+void string_manip(stack<string> & stacc, stack<string> & extra){
 
-concatenate():
-a
-b
-~
+	if(stacc.size() == 1){
+	 	return;
+	}
+	else if(stacc.empty()){
+		cout << "an error occurred." << endl;
+		return;
+	}
 
-1
-a
-~
+	string result,str, arg1,arg2 = "";
+	string operators = "~ <- -> # ? + -";
+	string top_str = stacc.top();
+	stacc.pop();
 
+	int num_args = 2; // all but # take 2 arguments
+	int operand;
 
+	if(top_str.compare("#") == 0){
+		num_args = 1;
+	}
 
-add():
-floating point addition
-negative numbers
+	if(operators.find(top_str) != operators.npos){ // top_str is an operator
 
-
-*/
-
-int string_manip();
-int list_option(stack<string> stacc, int indent_num);
-
-
-
-int string_manip(){
-	stack<string> args;
-	string inp,arg1,arg2,result = " ";
-
-	// non-arg
-	while(getline(cin,inp) && !inp.empty()){
-		
-		if(inp.compare("~") == 0){ //concatenate
+		if(top_str.compare("~") == 0){ //concatenate
 			//takes the two strings that are on the stack and combines them
 
 			//grab the arguments
-			if(args.size() < 2){
+			if(stacc.size() < 2){
 				cout << "Error: Invalid number of operands!" << endl;
 				exit(-1);
 			}
 
-			arg1 = args.top();
-			args.pop();
-			arg2 = args.top();
-			args.pop();
+			for(int k = 0; k < num_args; k++){
 
-			args.push(arg1.append(arg2));
+				if(operators.find(stacc.top()) != operators.npos){
 
-			// args.push(concatenate(arg1,arg2));
+					string_manip(stacc,extra);
 
+				}
+
+				result.append(stacc.top());
+				stacc.pop();
+			}
+
+			stacc.push(result);
 		}
 
-		else if(inp.compare("<-") == 0 || inp.compare("->") == 0 ){// left() and right()
+		else if(top_str.compare("<-") == 0 || top_str.compare("->") == 0 ){// left() and right()
 			//returns the first N characters from the beginning or end of the string
 			//on top of the stack
 
-			string str = args.top();
-			args.pop();
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
+
+			str = stacc.top();
+			stacc.pop();
 
 			try{
-				int operand = stoi(args.top());
-				args.pop();
-				
+
+				if(operators.find(stacc.top()) != operators.npos){
+					string_manip(stacc, extra);
+				}
+
+				operand = stoi(stacc.top());
+				stacc.pop();
 
 				if(operand > static_cast<int>(str.size())){
 					cout << "Error: Operand out of range!";
@@ -85,198 +90,247 @@ int string_manip(){
 				}
 				else{
 
-					if(inp.compare("<-") == 0){
-						args.push(str.substr(0,operand));
+					if(top_str.compare("<-") == 0){
+						stacc.push(str.substr(0,operand));
 					}
 					else{
-						args.push(str.substr(str.size() - operand));
+						stacc.push(str.substr(str.size() - operand));
 					}
 					
 				}
 
 			} catch(invalid_argument & ia) {
 				cout << "Error: Operand not an integer!" << endl;
-			}
-			
+			}	
 		}
  
-		else if(inp.compare("#") == 0){// len()
-			string tmp = args.top();
-			args.pop();
-			args.push(to_string(tmp.size()));
+		else if(top_str.compare("#") == 0){// len()
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
+
+			result = stacc.top();
+			stacc.pop();
+			stacc.push(to_string(result.size()));
 		}
 
-		else if(inp.compare("?") == 0){// find()
+		else if(top_str.compare("?") == 0){// find()
 
-			string str_to_search = args.top();
-			args.pop();
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
 
-			string query = args.top();
-			args.pop();
+			string str_to_search = stacc.top();
+			stacc.pop();
+
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
+
+			string query = stacc.top();
+			stacc.pop();
 
 			if(str_to_search.size() < query.size()){
-				args.push(to_string(-1));
+				stacc.push(to_string(-1));
 			}
 			else{
-				args.push(to_string(str_to_search.find(query)));
+				stacc.push(to_string(str_to_search.find(query)));
 			}
 			
 		}
 
-		else if(inp.compare("+") == 0 || inp.compare("-") == 0 ){ // add and subtract
+		else if(top_str.compare("+") == 0 || top_str.compare("-") == 0 ){ // add and subtract
 
-			if(args.size() < 2){
+			if(stacc.size() < 2){
 				cout << "Error: Invalid number of operands!" << endl;
 				exit(-1);
 			}
-			
-			arg1 = args.top();
-			args.pop();
-			arg2 = args.top();
-			args.pop();
 
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
+
+			arg1 = stacc.top();
+			stacc.pop();
+
+			if(operators.find(stacc.top()) != operators.npos){
+				string_manip(stacc, extra);
+			}
+
+			arg2 = stacc.top();
+			stacc.pop();
 
 			try{
 
-				int val1 = stoi(arg1);
-				int val2 = stoi(arg2);
-
-				if(inp.compare("+") == 0){
-					args.push(to_string(val1 + val2));
+				if(top_str.compare("+") == 0){
+					stacc.push(to_string(stoi(arg1) + stoi(arg2)));
+					
 				}else{
-					args.push(to_string(val1 - val2));
+					stacc.push(to_string(stoi(arg1) - stoi(arg2)));
 				}
-				
 
 			}catch(invalid_argument & ia){
 				cout << "Error: Operand not an integer!" << endl;
 			}
 
 		}
-
-		else{
-			transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
-			//utilized: 
-			//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
-			args.push(inp);
-		}
-
+		
+		return;
 	}
+	else{
 
-	cout << args.top() << endl;
+		extra.push(top_str);
+		string_manip(stacc, extra);
+		
+	}//a non operator is at the top of the stack
 
-	return 0;
 }
 
-int list_option(stack<string> stacc, int indent_num){
+void list_option(stack<string> &stacc, int indent_num){
 
 
 	if(stacc.empty()){
-		cout << ")" << endl;
-		return 0;
+
+	 	return;
 	}
 
 	string operators = "~ <- -> # ? + -";
 
 	string top_str = stacc.top();
-	stack<string> args;
-	int num_args = 2; // all but # have 2 args
+	stacc.pop();
+
+
+	int num_args = 2;
 
 	if(top_str.compare("#") == 0){
 		num_args = 1;
 	}
 
-	if(operators.find(top_str) != operators.npos){ // top_str is an operator
-		stacc.pop();
+
+	if(operators.find(top_str) != operators.npos){
+
 		for(int i = 0; i < indent_num; i++){
-				cout << "    ";
+			cout << "    ";
 		}
 		cout << "(" << top_str << endl;
-		
 
-		
-		for(int i = 0; i < indent_num; i++){
-				cout << "    ";
-		}
-		cout << ")" << endl;
+		for(int k = 0; k < num_args; k++){
 
-		// return list_option(stacc, indent_num + 1);
+			if(operators.find(stacc.top()) != operators.npos){
+				list_option(stacc, indent_num + 1);
 
+			}
+			else{
 
-		// if(top_str.compare("#") == 0){ // # only has one input
-		// 	for(int i = 0; i < indent_num; i++){
-		// 		cout << "    ";
-		// 	}
-		// 	cout << stacc.top();
-		// 	stacc.pop();
-		// 	cout << endl;
-		// 	for(int i = 0; i < indent_num - 1; i++){
-		// 		cout << "    ";
-		// 	}
-		// 	cout << ")" << endl;
+				for(int i = 0; i < indent_num + 1; i++){
+					cout << "    ";
+				}
+				cout << stacc.top() << endl;
+				stacc.pop();
 
-		// 	// return list_option(stacc, indent_num);
-		// }
-		// else{
-			// while(!stacc.empty()){
-
-			// 	for(int i = 0; i < indent_num; i++){
-			// 		cout << "    ";
-			// 	}
-			// 	if (operators.find(stacc.top()) == operators.npos)
-			// 	{
-					
-			// 		cout << stacc.top() << endl;
-			// 		stacc.pop();
-			// 		// args.pop(stacc.top());
-			// 		// stacc.pop();
-					
-			// 	}
-			// 	else{
-			// 		return list_option(stacc, indent_num + 1);
-					
-			// 	}
-				
-			// }
-
-			// for(int i = 0; i < indent_num - 1; i++){
-			// 	cout << "    ";
-			// }
-
-			// cout << ")" << endl;
-		// }
-		
-	}
-	else{
-		stacc.pop();
-	}
-
-
-
-	return list_option(stacc, indent_num + 1);
-}
-
-// int argc, char const *argv[]
-int main(int argc, char const *argv[]){
-	
-	if(argc > 1){
-		if(strcmp(argv[1],"-l") == 0){
-
-			stack<string> stacc;
-			string inp = " ";
-
-			while(getline(cin,inp) && !inp.empty()){
-				transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
-				//utilized: 
-				//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
-				stacc.push(inp);
 			}
 			
-			list_option(stacc, 0);
 		}
+
+		for(int i = 0; i < indent_num; i++){
+			cout << "    ";
+		}
+		cout << ")" << endl;
+		
+		return;
+	}
+
+}
+
+int main(int argc, char const *argv[]){
+
+	stack<string> main, copy, residual;
+	string inp = " ";
+	string operators = "~ <- -> # ? + -";
+	int num_args = 0, num_ops = 0, num_lens = 0;
+
+	while(getline(cin,inp) && !inp.empty()){
+
+		transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
+		//utilized: 
+		//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+		main.push(inp);
+		copy.push(inp);
+
+		if(operators.find(inp) != operators.npos){
+
+			if(inp.compare("#") == 0){
+				num_lens++;
+			}else{
+				num_ops++;
+			}
+			
+		}
+		else{
+			num_args++;
+		}
+
+		if(num_args < (num_ops * 2) + num_lens){//(num_ops * 2) + num_lens is the
+			//estimated number of args for all of the ops
+			cout << "Error: Invalid number of operands!" << endl;
+			exit(-1);
+		}
+
+	}
+
+	if(argc > 1){
+		
+		if(strcmp(argv[1],"-l") == 0){
+			string_manip(copy, residual);
+			
+			if(copy.size() + residual.size() == 1){
+				list_option(main, 0);
+			}
+			else{
+
+				while(!residual.empty()){
+					copy.push(residual.top());
+					residual.pop();
+				}
+
+				cout << "->"<< copy.top() << endl;
+				copy.pop();
+
+				while(!copy.empty()){
+					cout << copy.top() << endl;
+					copy.pop();
+				}
+
+			}
+			
+
+		}
+
 	}
 	else{
-		string_manip();
+		string_manip(main, residual);
+
+		if(main.size() + residual.size() == 1){
+			cout << main.top() << endl;
+		}
+		else{
+
+			while(!residual.empty()){
+				main.push(residual.top());
+				residual.pop();
+			}
+
+			cout << "->"<< copy.top() << endl;
+			copy.pop();
+			
+			while(!copy.empty()){
+				cout << copy.top() << endl;
+				copy.pop();
+			}
+		}
+
+		
 	}
+	
 	return 0;
 }

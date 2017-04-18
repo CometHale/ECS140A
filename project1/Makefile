@@ -4,7 +4,7 @@ rpns: rpns.o
 	
 rpns.o: rpns.cpp
 	# g++ rpns.cpp -c
-	clang++ -std=c++11 -stdlib=libc++ -Weverything rpns.cpp -c
+	clang++ -std=c++11 -stdlib=libc++ rpns.cpp -c
 
 clean: 
 	rm rpns rpns.o
