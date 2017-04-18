@@ -1,3 +1,4 @@
+// Written By Haley Sanders - Turner
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -293,9 +294,7 @@ int main(int argc, char const *argv[]){
 
 	while(getline(cin,inp) && !inp.empty()){
 
-		transform(inp.begin(), inp.end(),inp.begin(), ::toupper);
-		//utilized: 
-		//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
+		transform(inp.begin(), inp.end(),inp.begin(), ::toupper);//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
 		main.push(inp);
 		main_copy.push(inp);
 
