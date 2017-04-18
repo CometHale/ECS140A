@@ -8,22 +8,44 @@
 
 using namespace std;
 
-// Operand is not an integer!
-// Invalid number of inputs!
-// Invalid number of operands!
-// Operand out of range!
-
 void string_manip(stack<string> & stacc, stack<string> & extra);
 void list_option(stack<string> & stacc, int indent_num);
+void error_num_inputs(stack<string> & stacc, stack<string> & extra);
+void error_non_exception_operand_not_int(string arg1, string arg2);
+
+void error_num_inputs(stack<string> & stacc, stack<string> & extra){
+
+	cout << "Error: Invalid number of inputs!" << endl;
+
+	while(!extra.empty()){
+		stacc.push(extra.top());
+		extra.pop();
+	}
+
+	cout << "->"<< stacc.top() << endl;
+	stacc.pop();
+
+	while(!stacc.empty()){
+		cout << stacc.top() << endl;
+		stacc.pop();
+	}
+}
+
+void error_non_exception_operand_not_int(string arg1, string arg2){
+
+	string operators = "~ <- -> # ? + -";
+
+	if(arg1.find(".") != arg1.npos || arg2.find(".") != operators.npos ){
+		cout << "Error: Operand not an integer!" << endl;
+		exit(-1);
+	}// arg may be a float, so not an integer
+
+}
 
 void string_manip(stack<string> & stacc, stack<string> & extra){
 
 	if(stacc.size() == 1){
 	 	return;
-	}
-	else if(stacc.empty()){
-		cout << "an error occurred." << endl;
-		return;
 	}
 
 	string result,str, arg1,arg2 = "";
@@ -68,6 +90,11 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 			//returns the first N characters from the beginning or end of the string
 			//on top of the stack
 
+			if(stacc.size() < 2){
+				cout << "Error: Invalid number of operands!" << endl;
+				exit(-1);
+			}
+
 			if(operators.find(stacc.top()) != operators.npos){
 				string_manip(stacc, extra);
 			}
@@ -81,9 +108,12 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 					string_manip(stacc, extra);
 				}
 
+				error_non_exception_operand_not_int(stacc.top(), " ");
+
 				operand = stoi(stacc.top());
 				stacc.pop();
 
+				
 				if(operand > static_cast<int>(str.size())){
 					cout << "Error: Operand out of range!";
 					exit(-1);
@@ -105,6 +135,12 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 		}
  
 		else if(top_str.compare("#") == 0){// len()
+
+			if(stacc.size() < 1){
+				cout << "Error: Invalid number of operands!" << endl;
+				exit(-1);
+			}
+
 			if(operators.find(stacc.top()) != operators.npos){
 				string_manip(stacc, extra);
 			}
@@ -115,6 +151,11 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 		}
 
 		else if(top_str.compare("?") == 0){// find()
+
+			if(stacc.size() < 2){
+				cout << "Error: Invalid number of operands!" << endl;
+				exit(-1);
+			}
 
 			if(operators.find(stacc.top()) != operators.npos){
 				string_manip(stacc, extra);
@@ -160,6 +201,9 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 			arg2 = stacc.top();
 			stacc.pop();
 
+
+			error_non_exception_operand_not_int(arg1, arg2);
+
 			try{
 
 				if(top_str.compare("+") == 0){
@@ -183,7 +227,6 @@ void string_manip(stack<string> & stacc, stack<string> & extra){
 		string_manip(stacc, extra);
 		
 	}//a non operator is at the top of the stack
-
 }
 
 void list_option(stack<string> &stacc, int indent_num){
@@ -239,12 +282,11 @@ void list_option(stack<string> &stacc, int indent_num){
 		
 		return;
 	}
-
 }
 
 int main(int argc, char const *argv[]){
 
-	stack<string> main, copy, residual;
+	stack<string> main, main_copy, residual;
 	string inp = " ";
 	string operators = "~ <- -> # ? + -";
 	int num_args = 0, num_ops = 0, num_lens = 0;
@@ -255,7 +297,7 @@ int main(int argc, char const *argv[]){
 		//utilized: 
 		//http://stackoverflow.com/questions/735204/convert-a-string-in-c-to-upper-case
 		main.push(inp);
-		copy.push(inp);
+		main_copy.push(inp);
 
 		if(operators.find(inp) != operators.npos){
 
@@ -270,66 +312,33 @@ int main(int argc, char const *argv[]){
 			num_args++;
 		}
 
-		if(num_args < (num_ops * 2) + num_lens){//(num_ops * 2) + num_lens is the
-			//estimated number of args for all of the ops
-			cout << "Error: Invalid number of operands!" << endl;
-			exit(-1);
-		}
+
 
 	}
 
-	if(argc > 1){
-		
-		if(strcmp(argv[1],"-l") == 0){
-			string_manip(copy, residual);
-			
-			if(copy.size() + residual.size() == 1){
+	string_manip(main_copy, residual);
+
+	if(main_copy.size() + residual.size() == 1){
+
+		if(argc > 1){
+
+			if(strcmp(argv[1],"-l") == 0){
+
 				list_option(main, 0);
 			}
-			else{
-
-				while(!residual.empty()){
-					copy.push(residual.top());
-					residual.pop();
-				}
-
-				cout << "->"<< copy.top() << endl;
-				copy.pop();
-
-				while(!copy.empty()){
-					cout << copy.top() << endl;
-					copy.pop();
-				}
-
+			else {
+				cout << main_copy.top() << endl;
 			}
-			
 
 		}
-
-	}
-	else{
-		string_manip(main, residual);
-
-		if(main.size() + residual.size() == 1){
-			cout << main.top() << endl;
-		}
-		else{
-
-			while(!residual.empty()){
-				main.push(residual.top());
-				residual.pop();
-			}
-
-			cout << "->"<< copy.top() << endl;
-			copy.pop();
-			
-			while(!copy.empty()){
-				cout << copy.top() << endl;
-				copy.pop();
-			}
+		else {
+			cout << main_copy.top() << endl;
 		}
 
 		
+	}
+	else{
+		error_num_inputs(main_copy, residual);
 	}
 	
 	return 0;
