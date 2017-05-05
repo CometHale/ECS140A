@@ -5,9 +5,8 @@ JC = javac
 	$(JC) $(JFLAGS) $*.java
 
 CLASSES = \
-        XLanguageParser.java \
-        XLanguageTokenizer.java \
-        XToken.java
+        CScanner.java \
+        CToken.java
 
 default: classes
 
