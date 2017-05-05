@@ -1,4 +1,5 @@
 import java.io.*;
+import java.util.Arrays;
 
 public class CScanner {
   public static int lineNum;
@@ -12,7 +13,7 @@ public class CScanner {
   public static boolean isOp(char c) {
     String[] ops = { "=", "==", "<", ">", "<=", ">=", "!=", "+", "-", "*", "/", "(", ")", "{", "}", ";", ".", ","};
     String s = Character.toString(c);
-
+   
     for (int i = 0; i < ops.length; i++) {
       if (s.equals(ops[i])) {
         return true;
@@ -154,6 +155,7 @@ public class CScanner {
       }
 
       if (type.equals("Identifier")) {
+         
         for (int i = 0; i < keywords.length; i++) {
           if (token.equals(keywords[i])) {
             type = "Keyword";

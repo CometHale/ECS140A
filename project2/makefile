@@ -6,7 +6,9 @@ JC = javac
 
 CLASSES = \
         CScanner.java \
-        CToken.java
+        CToken.java \
+	Tree.java \
+	CParser.java \
 
 default: classes
 
