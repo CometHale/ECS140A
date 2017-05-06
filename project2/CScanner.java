@@ -2,10 +2,10 @@ import java.io.*;
 import java.util.Arrays;
 
 public class CScanner {
-  public static int lineNum;
-  public static int colNum;
+  public static int lineNum = 1;
+  public static int colNum = 1;
   public static char peek;
-  public static boolean needToUsePeek;
+  public static boolean needToUsePeek = false;
   public static CToken prevToken;
   public static CToken peekedToken;
   public static boolean needToUsePeekedToken;
@@ -178,9 +178,6 @@ public class CScanner {
   }
 
   public static void main(String[] args) {
-    lineNum = 1;
-    colNum = 1;
-    needToUsePeek = false;
     CToken t = new CToken();
     prevToken = t;
 
