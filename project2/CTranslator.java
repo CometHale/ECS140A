@@ -8,6 +8,7 @@ public class CTranslator implements Observer {
         // int G;  char G(){}
         //storage and implementation for anonymous interface
         //storage and implementation for function-defined interface
+        // two storages for global
     
     public static Hashtable<String,Stack<CSymbol>> symbolTable;
     public static Stack<String> scopes;
@@ -33,7 +34,7 @@ public class CTranslator implements Observer {
         CToken t = parser.getCurrentToken();
         String r = parser.getCurrentRule();
         boolean s = parser.getRuleStatus();
-        CSymbol tmp;
+        CSymbol tmp = new CSymbol();
         String[] dataTypes = {"unsigned", "char","short", "int", "long", 
             "float", "double", "instance","void"};
         String[] builtinFuncs = {"printi","printd","printc","scani","scanc","scand"};
@@ -75,8 +76,66 @@ public class CTranslator implements Observer {
             symbolTable.get(lastIdentifier).push(tmp);
             lastIdentifier = "";
         }
-            
         
+        if((r.equals("interfaceDeclaration") ||r.equals("memberDeclaration"))){
+            //interface
+            
+            if(symbolTable.containsKey(currentScope)){
+                 tmp = symbolTable.get(currentScope).pop(); // we're in either of those rules
+                // so the current scope must be an interface
+                if( !tmp.isInterface ){
+                    tmp.isInterface = true;
+                    symbolTable.get(currentScope).push(tmp); 
+                }
+                else{ //there's already an interface for this scope so error out
+                    System.err.println("There is already an interface in this scope"); // check to see what the message should be
+                    System.exit(0);
+                }
+            }
+           
+        }
+        
+        if((r.equals("implementationDeclaration") ||r.equals("functionDefinition"))){
+            //implementation
+           if(symbolTable.containsKey(currentScope)){
+                tmp = symbolTable.get(currentScope).pop();
+            
+                if(tmp.isInterface){
+                    if(tmp.hasImplementation){//there's already an implementation for this interface
+                        // so error out
+                        System.err.println("There is already an implementation in this interface"); // check to see what the message should be
+                        System.exit(0);
+                    }
+                    else{
+                        tmp.hasImplementation = true;
+                    }
+                }
+                symbolTable.get(currentScope).push(tmp); 
+           }
+            
+        }
+                
+        if(r.equals("storageDeclaration")){
+            //storage
+            if(symbolTable.containsKey(currentScope)){
+                tmp = symbolTable.get(currentScope).pop();
+            
+                if(tmp.isInterface){
+                    
+                    if(tmp.hasStorage){//there's already a storage declaration for this interface
+                        // so error out
+                        System.err.println("There is already a storage declaration in this interface"); // check to see what the message should be
+                        System.exit(0);
+                    }
+                    else{
+                        tmp.hasStorage = true;
+                    }
+                }
+                symbolTable.get(currentScope).push(tmp); 
+            }
+            
+        }
+                
 //        if(r.equals("block") && !s){
 //            if(!scopes.empty()){
 //                scopes.pop(); //exiting a scope
@@ -94,6 +153,7 @@ public class CTranslator implements Observer {
                 
                 lastIdentifier = t.token;
                 
+                
                 if(!symbolTable.containsKey(t.token)){//identifier not in symbol table
                     symbolTable.put(t.token,new Stack<CSymbol>());
                     tmp = new CSymbol();
@@ -107,7 +167,8 @@ public class CTranslator implements Observer {
                     symbolTable.get(t.token).push(tmp);//make sure to replace it
                     //may not be out of the current scope yet
                     
-                    if(tmp.scope.equals(currentScope) && !inFunctionCall && !r.equals("parameterBlock")){
+                    if(!incomplete.assignmentIncoming && !incomplete.type.equals("new") && !incomplete.type.equals("let") && tmp.scope.equals(currentScope) 
+                            && !inFunctionCall && !r.equals("parameterBlock")){
                         //this identifier is already being used in this scope
                         //and this isn't being used in a function call or parameter block
                         
@@ -133,7 +194,9 @@ public class CTranslator implements Observer {
                         System.exit(0);
                     }
                     else{//add another CSymbol to the stack for the identifier
-                        tmp = new CSymbol();
+                        
+
+                        
                         tmp.lineNum = t.lineNum;
                         tmp.scope = currentScope;
 
@@ -143,6 +206,11 @@ public class CTranslator implements Observer {
                 }
 
                 if(!incomplete.complete){
+                    
+                    if(incomplete.assignmentIncoming){
+                        incomplete.value += t.token;
+                    }
+                                            
                     incomplete.lineNum = t.lineNum;
                     incomplete.scope = currentScope;
                     symbolTable.get(t.token).push(incomplete);
@@ -186,7 +254,7 @@ public class CTranslator implements Observer {
                 }
                 
                 if(t.token.equals("implementation")){
-                    
+                    incomplete.type = t.token;
                 }
                 
                 if(t.token.equals("storage")){
@@ -201,8 +269,10 @@ public class CTranslator implements Observer {
 //                    
 //                }//builtin functions, prob need for part 4
                 
-//                if(t.token.equals("let")){
-//                }
+                if(t.token.equals("let")){
+                    
+                    incomplete.type = t.token;
+                }
                 
 
                 
@@ -214,9 +284,11 @@ public class CTranslator implements Observer {
 //                    
 //                }
 //                
-//                if(t.token.equals("new")){
-//                    
-//                }
+                if(t.token.equals("new")){
+                    
+                    incomplete.type = t.token;
+                    
+                }
 //                
 //                if(t.token.equals("return")){
 //                    
@@ -244,14 +316,16 @@ public class CTranslator implements Observer {
                 if(t.token.equals(")")){
                     inFunctionCall = false;
                 }
-//                if(t.token.equals("=")){
-//                    
-//                }
+                
+                if(t.token.equals("=")){
+                    incomplete.assignmentIncoming = true;
+                }
 //                
-//                if(t.token.equals(";")){
-//                    
-//                    
-//                }
+                if(t.token.equals(";")){
+                    
+                    incomplete.assignmentIncoming = false;
+                    
+                }
 //                
 //                if(Arrays.asList(mathOps).contains(t.token)){
 //                    

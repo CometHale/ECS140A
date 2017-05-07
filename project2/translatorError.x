@@ -1,16 +1,21 @@
-int A;
 
+interface Foo{
+    int Bar;
+    int X;
+    double Fun();
+    double Min(double a, double b);
+}
 
 void main(){
-    printi(B);
+    instance Foo B;
+
     printc(10);
 }
 
-storage global {
-    int C = 2;
+storage Foo{
+    int Y = 2;
 }
 
-int xx(int L) {
-    char D;
+implementation Too{
 
 }

@@ -1,4 +1,5 @@
 public class CSymbol{
+    
     public String type;
     public String protectionLevel; //private,public
     public String memberType;//function, data
@@ -7,6 +8,10 @@ public class CSymbol{
     public String scope;
     public int lineNum;
     boolean complete;
+    boolean hasStorage;
+    boolean hasImplementation;
+    boolean isInterface;
+    boolean assignmentIncoming;
     
     
     public CSymbol(){
@@ -18,6 +23,10 @@ public class CSymbol{
         scope = "";
         lineNum = 0;
         complete = false;
+        hasStorage = false;
+        hasImplementation = false;
+        isInterface = false;
+        assignmentIncoming = false;
     }
     
 }
