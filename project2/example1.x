@@ -8,3 +8,7 @@ void main(){
 storage global {
     int G = 2;
 }
+
+int xx(int d ) {
+  
+}

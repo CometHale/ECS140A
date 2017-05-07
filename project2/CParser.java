@@ -30,7 +30,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (!t.token.equals("(")) {
@@ -52,6 +52,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekNextToken(f);
 
             while (t.token.equals(",")) {
+                CScanner.needToUsePeekedToken = false;
                 if (!parameter(f)) {
                     System.err.format("Syntax Error: In rule ParameterBlock unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);   
                     System.exit(0);
@@ -62,13 +63,37 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
 
         } //not a closing parentheses -> parameter
 
-        t = CScanner.getNextToken(f);
-
         if (!t.token.equals(")")) {
             System.err.format("Syntax Error: In rule ParameterBlock unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
             System.exit(0);
         } //must close, if no close, its wrong af
 
+
+        return true;
+    }
+
+    public static boolean functionDefinition(FileInputStream f) {
+        // FunctionDefinition := DeclarationType ParameterBlock Block
+        CToken t = new CToken();
+
+
+        if (!declarationType(f)) {
+            return false;
+        }
+        
+        t = CScanner.peekNextToken(f);
+        
+        if (!parameterBlock(f)) {
+            System.err.format("Syntax Error: In rule FunctionDefinition unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
+        }
+        
+        t = CScanner.peekNextToken(f);
+        
+        if (!block(f)) {
+            System.err.format("Syntax Error: In rule FunctionDefinition unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
+        }
 
         return true;
     }
@@ -86,6 +111,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
         if (!t.token.equals(";")) {
             System.err.format("Syntax Error: In rule FunctionDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
         }
+
         return true;
     }
 
@@ -97,9 +123,8 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
-        
         
         if(!t.token.equals(";")){
             return false;
@@ -117,9 +142,8 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
-        
         
         if(!t.token.equals("instance")){
             return false;
@@ -146,11 +170,10 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
         
-        
-        if(!t.token.equals("float") || !t.token.equals("double")){
+        if(!t.token.equals("float") && !t.token.equals("double")){
             return false;
         }
        
@@ -166,7 +189,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
         
         String[] types = {"char","short","int","long"};
@@ -228,7 +251,8 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
         if(!declarationType(f)){
             return false;
         }
-        
+        t = CScanner.peekNextToken(f);
+
         //DataDeclaration and FunctionDeclaration
         if(!dataDeclaration(f) && !functionDeclaration(f)) {
             System.err.format("Syntax Error: In rule MemberDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);      
@@ -245,7 +269,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
         
         if(t.token.equals("interface")){ //we peeked in main
@@ -273,9 +297,9 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
                 t = CScanner.peekNextToken(f);
             } //ends optional memberDeclartion if }
             
-            if(!CScanner.peekNextToken(f).token.equals("}")){
-                System.err.format("Interface Declaration rule broken @%4d .\n",CScanner.prevToken.lineNum);
-                return false;
+            if(!t.token.equals("}")){
+                System.err.format("Syntax Error: In rule InterfaceDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);
             }
             
         }
@@ -296,7 +320,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (t.type.equals("IntConstant") || t.type.equals("FloatConstant") || t.token.equals("nil")) {
@@ -314,9 +338,9 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
-
+            
         if (!t.token.equals("new")) {
             return false;
         }
@@ -344,39 +368,45 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
                 t = CScanner.peekedToken;
             } //we peeked before this call, so use it
             else {
-               t = CScanner.getNextToken(f);
+               t = CScanner.peekNextToken(f);
              } //get token
+            
+            if (t.token.equals("(")) {
+                t = CScanner.peekNextToken(f); //get bc we need that closing paranthese (NOT OPTIONAL)  
+                if (!t.token.equals(")")) {
+                   if (!expression(f)) {
+                      System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                      System.exit(0);       
+                    }
 
-            // if (t.token.equals("(")) {
-            //     CScanner.needToUsePeekedToken = false;
-            //     t = CScanner.peekNextToken(f); //get bc we need that closing paranthese (NOT OPTIONAL)  
-            //     if (!t.token.equals(")")) {
-            //        if (!expression(f)) {
-            //           System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
-            //           System.exit(0);       
-            //         }
+                    if (CScanner.needToUsePeekedToken) {
+                        t = CScanner.peekedToken;
+                    } //we peeked before this call, so use it
+                    else {
+                       t = CScanner.peekNextToken(f);
+                     } //get token
 
-            //         t = CScanner.peekedToken;
+                   while (t.token.equals(",")) {
+                      CScanner.needToUsePeekedToken = false;
+                      if (!expression(f)) {
+                        System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                        System.exit(0);
+                      }
+                      t = CScanner.peekNextToken(f);
+                   }
 
-            //        while (t.token.equals(",")) {
-            //           CScanner.needToUsePeekedToken = false;
-            //           if (!expression(f)) {
-            //             System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
-            //             System.exit(0);
-            //           }
-            //           t = CScanner.peekNextToken(f);
-            //        }
+                   if (!t.token.equals(")")) {
+                      System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                      System.exit(0);  
+                   } //no closing parantheses
 
-            //        if (!t.token.equals(")")) {
-            //           System.err.format("Syntax Error: In rule Factor unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
-            //           System.exit(0);  
-            //        } //no closing parantheses
+                   CScanner.needToUsePeekedToken = false;
+                   return true;
+                } //expression inside
+            return true;
+            } //optional parantheses
 
-            //        return true;
-            //     } //expression inside
-            // return true;
-            // } //optional parantheses
-            // return true;
+            return true;
         } //( Descriptor [ ( Expression {, Expression} ) ] )
         else if (t.token.equals("(")) {
             CScanner.needToUsePeekedToken = false;
@@ -404,13 +434,20 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
             return false;
         }
 
-        t = CScanner.peekNextToken(f);
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.peekNextToken(f);
+        } //get token
 
         while (t.token.equals("*") || t.token.equals("/")) {
+            CScanner.needToUsePeekedToken = false;
             if (!factor(f)) {
                System.err.format("Syntax Error: In rule Term unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
                System.exit(0); 
             }
+            t = CScanner.peekNextToken(f);
         } //while multopeartor
 
         return true;
@@ -480,7 +517,7 @@ public class CParser {//    Based on pages 228 and 229 in "Programming Languages
         else {
             t = CScanner.getNextToken(f);
         } //get token
-System.out.println(t.token);
+
         if (!t.type.equals("Identifier") && !t.token.equals("self") && !t.token.equals("global")) {
             return false;
         } //neither an identifier, self, or global
@@ -507,7 +544,7 @@ System.out.println(t.token);
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (!t.token.equals("let")) {
@@ -520,19 +557,31 @@ System.out.println(t.token);
             System.exit(0); 
         }
 
-        t = CScanner.getNextToken(f);
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.getNextToken(f);
+        } //get token
 
         if (!t.token.equals("=")) {
             System.err.format("Syntax Error: In rule Assignment unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
             System.exit(0); 
         }
 
+        CScanner.needToUsePeekedToken = false;
+            
         if (!expression(f)) {
             System.err.format("Syntax Error: In rule Assignment unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
             System.exit(0); 
         }
 
-        t = CScanner.getNextToken(f);
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.getNextToken(f);
+        } //get token
 
         if (!t.token.equals(";")) {
             System.err.format("Syntax Error: In rule Assignment unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
@@ -549,7 +598,7 @@ System.out.println(t.token);
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (!t.token.equals("while")) {
@@ -591,7 +640,7 @@ System.out.println(t.token);
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (!t.token.equals("if")) {
@@ -633,13 +682,13 @@ System.out.println(t.token);
             t = CScanner.peekedToken;
         } //we peeked before this call, so use it
         else {
-            t = CScanner.getNextToken(f);
+            t = CScanner.peekNextToken(f);
         } //get token
 
         if (!t.token.equals("return")) {
             return false;
         }
-
+            
         CScanner.needToUsePeekedToken = false;
 
         if (!expression(f)) {
@@ -647,7 +696,12 @@ System.out.println(t.token);
             System.exit(0);
         }
 
-        CScanner.getNextToken(f);
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.peekNextToken(f);
+        } //get token
 
         if (!t.token.equals(";")) {
             System.err.format("Syntax Error: In rule ReturnStatement unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
@@ -666,7 +720,12 @@ System.out.println(t.token);
         }
         else if (expression(f)) {
 
-            t = CScanner.getNextToken(f);
+           if (CScanner.needToUsePeekedToken) {
+                t = CScanner.peekedToken;
+            } //we peeked before this call, so use it
+            else {
+                t = CScanner.getNextToken(f);
+            } //get token
 
             if (!t.token.equals(";")) {
                 System.err.format("Syntax Error: In rule Statement unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
@@ -695,6 +754,8 @@ System.out.println(t.token);
                 System.exit(0);
             }
 
+            t = CScanner.getNextToken(f);
+
             if (!t.token.equals(";")) {
                 System.err.format("Syntax Error: In rule VariableDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
                 System.exit(0);
@@ -718,12 +779,13 @@ System.out.println(t.token);
             t = CScanner.getNextToken(f);
         } //get token
 
-        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double"};
+        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double", "instance"};
 
         if (!t.token.equals("{")) {
             System.err.format("Syntax Error: In rule Block unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
             System.exit(0);
         } //{
+
         CScanner.needToUsePeekedToken = false;
         t = CScanner.peekNextToken(f);
 
@@ -743,8 +805,6 @@ System.out.println(t.token);
             t = CScanner.peekNextToken(f);
 
         } //{Statement}
-
-        CScanner.getNextToken(f);
 
         if (!t.token.equals("}")) {
             System.err.format("Syntax Error: In rule Block unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
@@ -799,17 +859,109 @@ System.out.println(t.token);
         return true;
     }
 
+    public static boolean storageDeclaration(FileInputStream f) {
+        // StorageDeclaration := storage ( Identifier | global ) { {VariableDeclaration}}
+        //we consume the storage beforehand so next token to check is Identifer/global
+        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double", "instance"};    
+        CToken t = new CToken();
+
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.peekNextToken(f);
+        } //get token
+
+        if (!t.token.equals("storage")) {
+            return false;
+        }
+
+        CScanner.needToUsePeekedToken = false;
+        t = CScanner.getNextToken(f);
+
+        if (!t.type.equals("Identifer") && !t.token.equals("global")) {
+            System.err.format("Syntax Error: In rule StorageDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
+        } //(Identifier | global)
+
+        t = CScanner.getNextToken(f);
+
+        if (!t.token.equals("{")) {
+            System.err.format("Syntax Error: In rule StorageDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
+        }
+
+        t = CScanner.peekNextToken(f);
+
+        while (Arrays.asList(dataTypes).contains(t.token)) {
+            if (!variableDeclaration(f)) {
+                System.err.format("Syntax Error: In rule StorageDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);
+            }
+            t = CScanner.peekNextToken(f);
+        } //some datatype -> { VariableDeclaration }
+
+        if (!t.token.equals("}")) {
+            System.err.format("Syntax Error: In rule StorageDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
+        }
+
+        return true;
+    }
+
+    public static boolean implementationDeclaration(FileInputStream f) {
+        // ImplementationDeclaration := ( implementation Identifier {{FunctionDefinition} } ) | FunctionDefinition
+        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double", "instance"}; 
+        CToken t = new CToken();
+
+        if (CScanner.needToUsePeekedToken) {
+            t = CScanner.peekedToken;
+        } //we peeked before this call, so use it
+        else {
+            t = CScanner.peekNextToken(f);
+        } //get token
+
+        if (t.token.equals("implementation")) {
+            CScanner.needToUsePeekedToken = false;
+            CScanner.getNextToken(f);
+
+            if (!t.type.equals("Identifier")) {
+                System.err.format("Syntax Error: In rule ImplementationDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);
+            }
+
+            t = CScanner.getNextToken(f);
+
+            while (Arrays.asList(dataTypes).contains(t.token)) {
+                if (!functionDefinition(f)) {
+                    System.err.format("Syntax Error: In rule ImplementationDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                    System.exit(0);
+                }
+                t = CScanner.peekNextToken(f);
+            } //{ FunctionDefinitoin }
+
+            if (!t.token.equals("}")) {
+                System.err.format("Syntax Error: In rule ImplementationDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);
+            }
+            return true;
+        } //( implementation Identifier {{FunctionDefinition} } ) 
+        else if (functionDefinition(f)) {
+            return true;
+        }
+        return false;
+    }
+
     public static boolean program(FileInputStream f){
 //   Program := {InterfaceDeclaration} MainDeclaration {StorageDeclaration}{ImplementationDeclaration}   
 
         CToken t = new CToken();
         t = CScanner.peekNextToken(f);
 
-        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double"};   
+        String[] dataTypes = {"unsigned", "char","short", "int", "long", "float", "double", "instance"};   
         
         //InterfaceDeclaration (optional)
         while (!t.token.equals("void")) {
-
             if(!interfaceDeclaration(f)){
                 System.err.format("Syntax Error: In rule Program unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
                 System.exit(0);    
@@ -824,34 +976,23 @@ System.out.println(t.token);
             System.exit(0);     
         }
 
-        if(t.token.equals("void")){
+        t = CScanner.peekNextToken(f);
 
-            
-//            if(!mainDeclaration(f)){
-//                System.exit(0);
-//            }
-            //StorageDeclaration (optional)
-            if(t.equals("storage")){
-                System.out.println("program --> mainDeclaration --> storage");
-//                if(!storageDeclaration(f)){
-//                    System.exit(0);
-//                }
+        while (t.token.equals("storage")) {
+            if (!storageDeclaration(f)) {
+                System.err.format("Syntax Error: In rule Program unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);    
             }
+            t = CScanner.peekNextToken(f);
+        } //Storage Declaration
 
-            //Implementation Declaration (optional)
-            if(t.equals("implementation") || Arrays.asList(dataTypes).contains(t.token)){
-                System.out.println("program --> mainDeclaration--> implementationDeclaration");
-                
-//                if(!implementationDeclaration(f)){
-//                    System.exit(0);
-//                }
+        while (!t.type.equals("None")) {
+            if (!implementationDeclaration(f)) {
+                System.err.format("Syntax Error: In rule Program unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+                System.exit(0);    
             }
-           
-        }
-        
-        if(CScanner.prevToken.type.equals("None")){
-            return true;
-        }
+            t = CScanner.peekNextToken(f);
+        } //Implementation Declaration
         
         return true;
     }
@@ -863,8 +1004,6 @@ System.out.println(t.token);
         if (args.length == 0) {
             System.exit(0);
         }
-        
-        System.out.format("Entering Parser: %s\n",args[0]);
         
         File file = new File(args[0]);
         boolean result = false;
