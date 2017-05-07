@@ -1,1 +1,4 @@
-Used the parser in "Programming Languages, Principles and Practice" (Pages 228 and 229) to guide development of CParser.
+Ly, Sally, 999882177, sadly@ucdavis.edu
+Sanders-Turner, Haley, 912296300, hfsanders@ucdavis.edu
+
+Sources/References:
