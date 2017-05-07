@@ -168,6 +168,7 @@ public class CParser{//    Based on pages 228 and 229 in "Programming Languages,
 
         if (!t.token.equals(";")) {
             System.err.format("Syntax Error: In rule FunctionDeclaration unexpected token \"%s\" of type %s on line %d.\n", t.token, t.type, t.lineNum);
+            System.exit(0);
         }
         if(observer != null){
             observer.parser.setCurrentRule("functionDeclaration", false);
@@ -1334,15 +1335,15 @@ public class CParser{//    Based on pages 228 and 229 in "Programming Languages,
             FileInputStream f = new FileInputStream(file);
             
             if(args.length == 2 && args[1].equals("Translator")){
+                
                 observer = new CTranslator();
             }
             
             result = program(f);
             
-            if(result){
+            if(observer == null && result){
                 System.out.format("%s is a valid X program!\n",args[0]);
             }
-        
         }
         catch (FileNotFoundException e) {
           System.err.println("No file.");
