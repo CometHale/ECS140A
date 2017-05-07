@@ -7,7 +7,9 @@ JC = javac
 CLASSES = \
         CScanner.java \
         CToken.java \
-	CParser.java
+	CParser.java \
+	ObservableParser.java \
+	CTranslator.java
 
 default: classes
 
