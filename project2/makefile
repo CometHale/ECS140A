@@ -9,7 +9,8 @@ CLASSES = \
         CToken.java \
 	CParser.java \
 	ObservableParser.java \
-	CTranslator.java
+	CTranslator.java \
+	CSymbol.java
 
 default: classes
 

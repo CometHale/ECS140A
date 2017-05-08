@@ -10,21 +10,28 @@ public class CTranslator implements Observer {
         //storage and implementation for function-defined interface
         // two storages for global
     
-    public static Hashtable<String,Stack<CSymbol>> symbolTable;
+    public static Hashtable<String,ArrayList<CSymbol>> symbolTable;
     public static Stack<String> scopes;
+    public static CToken lastToken;
     public static String lastIdentifier;
     public static boolean inFunctionCall;
-    public static String currentGroup; //Implementation, Interface, Storage
+    public static boolean inStorageDef;
+//    public static boolean instanceCall;
+    public static boolean inImplementation;
     public static ObservableParser parser;
     public static CSymbol incomplete;//incomplete declaration
     
     public CTranslator(){
-        this.symbolTable = new Hashtable<String,Stack<CSymbol>>();
+        this.symbolTable = new Hashtable<String,ArrayList<CSymbol>>();
         this.scopes = new Stack<String>();
+        this.lastToken = new CToken();
         this.scopes.push("global");
-        this.lastIdentifier = "";
         this.incomplete = new CSymbol();
         this.parser = new ObservableParser();
+        this.inFunctionCall = false;
+        this.inImplementation = false;
+        this.lastIdentifier = "";
+        this.inStorageDef = false;
         parser.addObserver(this);
     }
     
@@ -34,326 +41,316 @@ public class CTranslator implements Observer {
         CToken t = parser.getCurrentToken();
         String r = parser.getCurrentRule();
         boolean s = parser.getRuleStatus();
+        
         CSymbol tmp = new CSymbol();
         String[] dataTypes = {"unsigned", "char","short", "int", "long", 
             "float", "double", "instance","void"};
-        String[] builtinFuncs = {"printi","printd","printc","scani","scanc","scand"};
-        String[] mathOps = {"+","-","*","/","==",">=","<=","<",">","!="};
-        String capGroup;
-               
+        
+//        String[] builtinFuncs = {"printi","printd","printc","scani","scanc","scand"};
+//        String[] mathOps = {"+","-","*","/","==",">=","<=","<",">","!="};
+//        String capGroup;
+        
         if(scopes.empty()){
             scopes.push("global");
         }
         String currentScope = scopes.pop();
         scopes.push(currentScope);
         
-//        System.out.println("currentScope:" + currentScope);
-//        if(r != null){
-//            System.out.println("currentRule:"+ r +" Status:"+s);
-//        }
+        if(r.equals("interfaceDeclaration") && lastToken != null && t != null){
+            //interface
+
+            if(lastToken.token.equals("interface") && !symbolTable.containsKey(t.token)){
+               symbolTable.put(t.token,new ArrayList<CSymbol>());
+               
+               tmp.type = lastToken.token; //tmp is an interface
+               tmp.scope = currentScope;
+               symbolTable.get(t.token).add(tmp);
+               scopes.push(t.token);
+            }
+            else{
                 
-        if(r.equals("storageDeclaration") || r.equals("dataDeclaration")
-                || r.equals("interfaceDeclaration") || r.equals("implementationDeclaration") ){
-
-            currentGroup = r.substring(0,r.indexOf("Declaration"));
-        }// there may be other times when currentGroup needs to change
-                        
-        if(!lastIdentifier.equals("") && (r.equals("functionDeclaration") || r.equals("functionDefinition"))){
-            //the last identifier added to the symbol table was a function declaration
-            tmp = symbolTable.get(lastIdentifier).pop();
-            tmp.memberType = "function";
-            tmp.groupType = currentGroup;
-            symbolTable.get(lastIdentifier).push(tmp);
-            scopes.push(lastIdentifier);// we're about to enter a new scope
-            lastIdentifier = "";
-        }
-
-        if((r.equals("dataDeclaration") ||r.equals("variableDeclaration")|| r.equals("parameterBlock") 
-                || r.equals("parameter") || r.equals("block")) && !lastIdentifier.equals("")){
-            //the last identifier added to the symbol table was a data declaration
-            tmp = symbolTable.get(lastIdentifier).pop();
-            tmp.groupType = currentGroup;
-            symbolTable.get(lastIdentifier).push(tmp);
-            lastIdentifier = "";
+                if(t.type.equals("Identifier")){
+                    System.err.format("Interface %s already defined.\n",t.token);
+                    System.exit(0);
+                }
+               
+            }
         }
         
-        if((r.equals("interfaceDeclaration") ||r.equals("memberDeclaration"))){
-            //interface
+        if(r.equals("memberDeclaration") && lastToken != null && t != null){
             
-            if(symbolTable.containsKey(currentScope)){
-                 tmp = symbolTable.get(currentScope).pop(); // we're in either of those rules
-                // so the current scope must be an interface
-                if( !tmp.isInterface ){
-                    tmp.isInterface = true;
-                    symbolTable.get(currentScope).push(tmp); 
+            if(lastToken.token.equals("instance")){
+                incomplete.type = t.token;
+            }
+            else{
+                
+                if(Arrays.asList(dataTypes).contains(lastToken.token)){
+                    incomplete.type = lastToken.token;
                 }
-                else{ //there's already an interface for this scope so error out
-                    System.err.println("There is already an interface in this scope"); // check to see what the message should be
+                
+                if(!Arrays.asList(dataTypes).contains(incomplete.type) && !symbolTable.containsKey(t.token) && t.type.equals("Identifier")){
+                    symbolTable.put(t.token,new ArrayList<CSymbol>());
+                    incomplete.scope = currentScope;
+                    incomplete.lineNum = t.lineNum;
+                    
+                    symbolTable.get(t.token).add(incomplete);
+                    incomplete = new CSymbol();
+                    
+                }//incomplete.type is an identifier
+                else if(Arrays.asList(dataTypes).contains(incomplete.type) && !symbolTable.containsKey(t.token) && t.type.equals("Identifier")){
+                    symbolTable.put(t.token,new ArrayList<CSymbol>());
+                    incomplete.scope = currentScope;
+                    incomplete.lineNum = t.lineNum;
+                    symbolTable.get(t.token).add(incomplete);
+                    incomplete = new CSymbol();
+                }//incomplete.type is a data type
+                else if(symbolTable.containsKey(t.token) && t.type.equals("Identifier")){
+                    System.err.format("Data member %s on line %d already defined .\n",t.token, t.lineNum);
+                    System.exit(0);
+                } 
+                
+                if(t.type.equals("Operator") && lastToken.type.equals("Identifier")){
+                    
+                    if(lastToken != null && symbolTable.get(lastToken.token) != null && t.token.equals("(")){
+                        // last token was a named function
+                        //and we're entering it's scope
+                        //scope is exited at the !s check at the end of this update() function
+                        symbolTable.get(lastToken.token).get(symbolTable.get(lastToken.token).size() - 1).isFunction = true;
+                        scopes.push(lastToken.token);
+                        inFunctionCall = true;
+                    }
+                    
+                }
+
+                
+            }
+            
+        }
+        
+        if(r.equals("parameterBlock") && lastToken != null && t != null){
+            if(t.token.equals(")")){
+                inFunctionCall = false;
+            }
+        }
+        
+        if(r.equals("parameter") && lastToken != null && t != null){
+            
+            if(Arrays.asList(dataTypes).contains(lastToken.token) && t.type.equals("Identifier")){
+                
+                if(!symbolTable.containsKey(t.token)){
+                    symbolTable.put(t.token,new ArrayList<CSymbol>());
+                    tmp.type = lastToken.token;
+                    tmp.scope = currentScope;
+                    symbolTable.get(t.token).add(tmp);
+                }
+                else{
+                   
+                    for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
+                       
+                       if(!symbolTable.get(t.token).get(i).scope.equals(currentScope)){
+                            tmp.type = lastToken.token;
+                            tmp.scope = currentScope;
+                            symbolTable.get(t.token).add(tmp);
+                       }
+                       else{
+                           System.err.format("Data member %s on line %d already defined .\n",t.token, t.lineNum);
+                           System.exit(0);
+                       }
+                    }
+                    
+                }
+                
+            } 
+        }
+        
+        if(r.equals("implementationDeclaration") && lastToken != null && t != null){
+            //implementation
+            
+            if(s){
+                inImplementation = true;
+            }
+            else{
+                inImplementation = false;
+            }
+            
+            if(lastToken.token.equals("implementation") && t.type.equals("Identifier")){
+                incomplete.type = lastToken.token;
+                
+                if(symbolTable.containsKey(t.token)){
+                    for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
+                      
+                       if(symbolTable.get(t.token).get(i).type.equals("implementation")){
+                           //there can't be more than one implementation per interface
+                            System.err.format("Implementation member %s on line %d already defined for interface.\n",t.token, t.lineNum);
+                            System.exit(0);
+                       }
+
+                    }
+                    
+                    incomplete.scope = currentScope;
+                    symbolTable.get(t.token).add(incomplete);
+
+                }
+                else{//there needs to be an interface already
+                    System.err.format("Implementation member %s on line %d needs a defined interface .\n",t.token, t.lineNum);
                     System.exit(0);
                 }
             }
-           
+            
         }
         
-        if((r.equals("implementationDeclaration") ||r.equals("functionDefinition"))){
-            //implementation
-           if(symbolTable.containsKey(currentScope)){
-                tmp = symbolTable.get(currentScope).pop();
-            
-                if(tmp.isInterface){
-                    if(tmp.hasImplementation){//there's already an implementation for this interface
-                        // so error out
-                        System.err.println("There is already an implementation in this interface"); // check to see what the message should be
-                        System.exit(0);
-                    }
-                    else{
-                        tmp.hasImplementation = true;
-                    }
-                }
-                symbolTable.get(currentScope).push(tmp); 
-           }
-            
-        }
-                
-        if(r.equals("storageDeclaration")){
-            //storage
-            if(symbolTable.containsKey(currentScope)){
-                tmp = symbolTable.get(currentScope).pop();
-            
-                if(tmp.isInterface){
+        if(r.equals("declarationType") && lastToken != null && t != null ){
                     
-                    if(tmp.hasStorage){//there's already a storage declaration for this interface
-                        // so error out
-                        System.err.println("There is already a storage declaration in this interface"); // check to see what the message should be
-                        System.exit(0);
-                    }
-                    else{
-                        tmp.hasStorage = true;
-                    }
+            if(inImplementation){                    
+                if(Arrays.asList(dataTypes).contains(lastToken.token) && t.type.equals("Identifier")){
+
+                     if(symbolTable.containsKey(t.token)){
+
+                         for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
+
+                            if(symbolTable.get(t.token).get(i).scope.equals(currentScope)){
+                                 System.err.format("Data member %s on line %d already defined for implementation.\n",t.token, t.lineNum);
+                                 System.exit(0);
+                            }
+                         }
+
+                     }
+ 
+                     symbolTable.put(t.token,new ArrayList<CSymbol>());
+                     tmp = new CSymbol();
+                     
+                     tmp.lineNum = t.lineNum;
+                     tmp.type = lastToken.token;
+                     tmp.scope = currentScope;
+                     symbolTable.get(t.token).add(tmp);
+
+                }  
+            }
+            else{
+                if(Arrays.asList(dataTypes).contains(t.token)){
+                    incomplete.type = t.token;
                 }
-                symbolTable.get(currentScope).push(tmp); 
             }
             
         }
+        
+        if(r.equals("functionDefinition") && lastToken != null && t != null){
+            if(t.token.equals("(")){
                 
-//        if(r.equals("block") && !s){
-//            if(!scopes.empty()){
-//                scopes.pop(); //exiting a scope
-//            }
-//            else{
-//                scopes.push("global"); //global should always be on the stack
-//            }                   
-//        }
+                if(lastToken.type.equals("Identifier")){
+                    symbolTable.get(lastToken.token).get(symbolTable.get(lastToken.token).size() - 1).isFunction = true;
+                }
+            }
+        }
+        
+        if(r.equals("storageDeclaration") && lastToken != null && t != null){
+            //storage
+            if(lastToken.token.equals("storage") && (t.type.equals("Identifier") || t.token.equals("global"))){
+                
+//
+                
+                incomplete.type = lastToken.token;
+                
+                if(t.token.equals("global")){
+                    //add the variables within as global-scope members
+                    if(symbolTable.containsKey(t.token)){
+                        
+                        for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
+
+                           if(symbolTable.get(t.token).get(i).type.equals("storage")){
+                               //there can't be more than one storage per interface
+                                System.err.format("Storage member %s on line %d already defined for interface.\n",t.token, t.lineNum);
+                                System.exit(0);
+                           }
+
+                        }
+                        
+                        incomplete.scope = currentScope;
+                        symbolTable.get(t.token).add(incomplete);
+                    }
+                    else{
+                        symbolTable.put(t.token,new ArrayList<CSymbol>());
+                        
+                        incomplete.scope = currentScope;
+                        symbolTable.get(t.token).add(incomplete);
+                    
+                    }
+                    
+                }
+                else{
+                    if(symbolTable.containsKey(t.token)){
+                        for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
+
+                           if(symbolTable.get(t.token).get(i).type.equals("storage")){
+                               //there can't be more than one storage per interface
+                                System.err.format("Storage member %s on line %d already defined for interface.\n",t.token, t.lineNum);
+                                System.exit(0);
+                           }
+
+                        }
+
+                        incomplete.scope = currentScope;
+                        symbolTable.get(t.token).add(incomplete);
+
+                    }
+                    else{//there needs to be an interface already
+                        System.err.format("Implementation member %s on line %d needs a defined interface .\n",t.token, t.lineNum);
+                        System.exit(0);
+                    }
+                }
+//   
+            }
+            
+        }
+        
+        if(r.equals("variableDeclaration") && t != null && lastToken != null){
+            
+            if(!lastIdentifier.equals("")){
+                if(symbolTable.containsKey(lastIdentifier)){
+                    for(int i = 0; i < symbolTable.get(lastIdentifier).size(); i++){
+                    
+                        if(symbolTable.get(lastIdentifier).get(i).scope.equals(currentScope)){
+                            if(symbolTable.get(lastIdentifier).get(i).type.equals(incomplete.type)){
+                                symbolTable.get(lastIdentifier).get(i).value = lastToken.token;
+                            }
+                            else{
+                                System.err.format(" %s on line %d has different declared type.\n",lastIdentifier, t.lineNum);
+                                System.exit(0);
+                            }
+                        }
+                    }
+                }
+                else{
+                    symbolTable.put(lastIdentifier,new ArrayList<CSymbol>());
+                    incomplete.value = lastToken.token;
+                    incomplete.scope = currentScope;
+                    incomplete.lineNum = lastToken.lineNum;
+                    symbolTable.get(t.token).add(incomplete);
+                        
+                }
+            }
+        }
+        
+        if( t != null && t.token.equals("=") && lastToken != null){
+            if(lastToken.type.equals("Identifier")){
+                lastIdentifier = lastToken.token;
+            }
+        }
+
+        if(!s && !inFunctionCall) {
+            
+            if(!scopes.empty()){
+                scopes.pop();
+            }
+            else{
+                scopes.push("global"); //global should always be on the stack
+            } 
+        }
         
         if(t != null){
             
-//            System.out.println("currentToken:"+t.token);
-            
-            if(t.type.equals("Identifier") && !Arrays.asList(builtinFuncs).contains(t.token)){
-                
-                lastIdentifier = t.token;
-                
-                
-                if(!symbolTable.containsKey(t.token)){//identifier not in symbol table
-                    symbolTable.put(t.token,new Stack<CSymbol>());
-                    tmp = new CSymbol();
-                    tmp.lineNum = t.lineNum;
-                    tmp.scope = currentScope;
-                    symbolTable.get(t.token).push(tmp);
-                }
-                else{//identifier in symbol table
-                    
-                    tmp = symbolTable.get(t.token).pop();
-                    symbolTable.get(t.token).push(tmp);//make sure to replace it
-                    //may not be out of the current scope yet
-                    
-                    if(!incomplete.assignmentIncoming && !incomplete.type.equals("new") && !incomplete.type.equals("let") && tmp.scope.equals(currentScope) 
-                            && !inFunctionCall && !r.equals("parameterBlock")){
-                        //this identifier is already being used in this scope
-                        //and this isn't being used in a function call or parameter block
-                        
-                        if(tmp.memberType.equals("function")){
-                            System.err.format("%s member already declared a %s!\n", 
-                                tmp.protectionLevel, tmp.memberType
-                            );
-                        }
-                        
-                        if(tmp.groupType.length() > 1){
-                            capGroup = tmp.groupType.substring(0,1).toUpperCase() + tmp.groupType.substring(1);
-                        }
-                        else{
-                            capGroup = tmp.groupType;
-                        }
-                        
-                        System.err.format("Semantic Error: %s member %s %s on "
-                                + "line %d has already been declared in %s!.\n", 
-                                capGroup, tmp.memberType, t.token, 
-                                t.lineNum,tmp.groupType
-                        );
-                        //Data member G on line 1 has already been declared in interface!
-                        System.exit(0);
-                    }
-                    else{//add another CSymbol to the stack for the identifier
-                        
-
-                        
-                        tmp.lineNum = t.lineNum;
-                        tmp.scope = currentScope;
-
-                        symbolTable.get(t.token).push(tmp);
-                    }
-                   //addition, subtraction, etc. for checking return types
-                }
-
-                if(!incomplete.complete){
-                    
-                    if(incomplete.assignmentIncoming){
-                        incomplete.value += t.token;
-                    }
-                                            
-                    incomplete.lineNum = t.lineNum;
-                    incomplete.scope = currentScope;
-                    symbolTable.get(t.token).push(incomplete);
-                    incomplete = new CSymbol();
-                }//there's an incomplete symbol definition
-
-            }
-
-            if(t.type.equals("Keyword")){
-                
-                if(Arrays.asList(dataTypes).contains(t.token)){
-                    incomplete.type = t.token;
-                    incomplete.scope = currentScope;
-                }
-                
-//                if(t.token.equals("self")){
-//                    
-//                }//scope stuff
-                
-                if(t.token.equals("global")){
-                    scopes.push("global");
-                }
-                
-                if(t.token.equals("main")){
-                    //no need to check in symbol table
-                    //double main error is caught by syntax
-                    if(!symbolTable.contains(t.token)){//identifier not in symbol table
-                        symbolTable.put(t.token,new Stack<CSymbol>());
-                        tmp = new CSymbol();
-                        tmp.lineNum = t.lineNum;
-                        tmp.memberType = "function";
-                        tmp.scope = currentScope;
-                        symbolTable.get(t.token).push(tmp);
-                    }
-                   
-                    scopes.push(t.token);
-                }//main declaration is coming
-                
-                if(t.token.equals("instance")){
-                    
-                }
-                
-                if(t.token.equals("implementation")){
-                    incomplete.type = t.token;
-                }
-                
-                if(t.token.equals("storage")){
-                    
-                }
-                
-                if(t.token.equals("interface")){
-                    
-                }
-                
-//                if(Arrays.asList(builtinFuncs).contains(t.token)){
-//                    
-//                }//builtin functions, prob need for part 4
-                
-                if(t.token.equals("let")){
-                    
-                    incomplete.type = t.token;
-                }
-                
-
-                
-//                if(t.token.equals("while")){
-//                    
-//                }
-//                
-//                if(t.token.equals("if")){
-//                    
-//                }
-//                
-                if(t.token.equals("new")){
-                    
-                    incomplete.type = t.token;
-                    
-                }
-//                
-//                if(t.token.equals("return")){
-//                    
-//                }
-            }
-
-            if(t.type.equals("Operator")){
-                
-                if(t.token.equals("}")){
-                    //need for keeping track of scope
-                    
-                    if(!scopes.empty()){
-                        scopes.pop(); //exiting a scope
-                    }
-                    else{
-                        scopes.push("global"); //global should always be on the stack
-                    }
-                    
-                }
-                
-                if(t.token.equals("(")){
-                    inFunctionCall = true;
-                }
-                
-                if(t.token.equals(")")){
-                    inFunctionCall = false;
-                }
-                
-                if(t.token.equals("=")){
-                    incomplete.assignmentIncoming = true;
-                }
-//                
-                if(t.token.equals(";")){
-                    
-                    incomplete.assignmentIncoming = false;
-                    
-                }
-//                
-//                if(Arrays.asList(mathOps).contains(t.token)){
-//                    
-//                }
-                                
-            }
-
-//            if(t.type.contains("Constant")){
-//
-////                if(incomplete.value.equals("")){
-////                    
-////                }
-//                incomplete.value = t.token;
-//            }
-        
-            parser.setCurrentToken(null);
+            lastToken = t;
         }
-        
-        
-
-       
-//        if(!s){
-//            System.out.println("exiting rule "+ r);
-//            parser.currentRule = "";
-//        }//the rule was just exited
-        
-      
-        
     }
     
     public static void main(String[] args) {
@@ -374,6 +371,5 @@ public class CTranslator implements Observer {
 
         String[] newArgs = {args[0], "Translator"};
         p.main(newArgs);
-        System.out.println("Success");
     }   
 }
