@@ -45,11 +45,7 @@ public class CTranslator implements Observer {
         CSymbol tmp = new CSymbol();
         String[] dataTypes = {"unsigned", "char","short", "int", "long", 
             "float", "double", "instance","void"};
-        
-//        String[] builtinFuncs = {"printi","printd","printc","scani","scanc","scand"};
-//        String[] mathOps = {"+","-","*","/","==",">=","<=","<",">","!="};
-//        String capGroup;
-        
+
         if(scopes.empty()){
             scopes.push("global");
         }
@@ -148,13 +144,18 @@ public class CTranslator implements Observer {
                     for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
                        
                        if(!symbolTable.get(t.token).get(i).scope.equals(currentScope)){
+                           
                             tmp.type = lastToken.token;
                             tmp.scope = currentScope;
                             symbolTable.get(t.token).add(tmp);
                        }
                        else{
-                           System.err.format("Data member %s on line %d already defined .\n",t.token, t.lineNum);
-                           System.exit(0);
+                           
+                            if(!symbolTable.get(t.token).get(i).type.equals(lastToken.token)){
+                                System.err.format(" %s on line %d has different declared type.\n",lastIdentifier, t.lineNum);
+                                System.exit(0);
+                            }
+                            
                        }
                     }
                     
@@ -174,11 +175,9 @@ public class CTranslator implements Observer {
             }
             
             if(lastToken.token.equals("implementation") && t.type.equals("Identifier")){
-                incomplete.type = lastToken.token;
                 
                 if(symbolTable.containsKey(t.token)){
                     for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
-                      
                        if(symbolTable.get(t.token).get(i).type.equals("implementation")){
                            //there can't be more than one implementation per interface
                             System.err.format("Implementation member %s on line %d already defined for interface.\n",t.token, t.lineNum);
@@ -186,10 +185,10 @@ public class CTranslator implements Observer {
                        }
 
                     }
-                    
+                    incomplete.type = lastToken.token;
                     incomplete.scope = currentScope;
                     symbolTable.get(t.token).add(incomplete);
-
+                   
                 }
                 else{//there needs to be an interface already
                     System.err.format("Implementation member %s on line %d needs a defined interface .\n",t.token, t.lineNum);
@@ -209,8 +208,10 @@ public class CTranslator implements Observer {
                          for(int i = 0; i < symbolTable.get(t.token).size(); i++ ){
 
                             if(symbolTable.get(t.token).get(i).scope.equals(currentScope)){
-                                 System.err.format("Data member %s on line %d already defined for implementation.\n",t.token, t.lineNum);
-                                 System.exit(0);
+                                if(!symbolTable.get(t.token).get(i).type.equals(lastToken.token)){
+                                    System.err.format(" %s on line %d has different declared type.\n",lastIdentifier, t.lineNum);
+                                    System.exit(0);
+                                }
                             }
                          }
 
@@ -294,7 +295,7 @@ public class CTranslator implements Observer {
 
                     }
                     else{//there needs to be an interface already
-                        System.err.format("Implementation member %s on line %d needs a defined interface .\n",t.token, t.lineNum);
+                        System.err.format("Storage member %s on line %d needs a defined interface .\n",t.token, t.lineNum);
                         System.exit(0);
                     }
                 }
@@ -305,30 +306,32 @@ public class CTranslator implements Observer {
         
         if(r.equals("variableDeclaration") && t != null && lastToken != null){
             
-            if(!lastIdentifier.equals("")){
-                if(symbolTable.containsKey(lastIdentifier)){
-                    for(int i = 0; i < symbolTable.get(lastIdentifier).size(); i++){
-                    
-                        if(symbolTable.get(lastIdentifier).get(i).scope.equals(currentScope)){
-                            if(symbolTable.get(lastIdentifier).get(i).type.equals(incomplete.type)){
-                                symbolTable.get(lastIdentifier).get(i).value = lastToken.token;
-                            }
-                            else{
-                                System.err.format(" %s on line %d has different declared type.\n",lastIdentifier, t.lineNum);
-                                System.exit(0);
+                if(!lastIdentifier.equals("")){
+                    if(symbolTable.containsKey(lastIdentifier)){
+                        for(int i = 0; i < symbolTable.get(lastIdentifier).size(); i++){
+
+                            if(symbolTable.get(lastIdentifier).get(i).scope.equals(currentScope)){
+                                if(symbolTable.get(lastIdentifier).get(i).type.equals(incomplete.type)){
+                                    symbolTable.get(lastIdentifier).get(i).value = lastToken.token;
+                                }
+                                else{
+                                    System.err.format(" %s on line %d has different declared type.\n",lastIdentifier, t.lineNum);
+                                    System.exit(0);
+                                }
                             }
                         }
                     }
+                    else{
+                        symbolTable.put(lastIdentifier,new ArrayList<CSymbol>());
+                        incomplete.value = lastToken.token;
+                        incomplete.scope = currentScope;
+                        incomplete.lineNum = lastToken.lineNum;
+
+                        symbolTable.get(lastIdentifier).add(incomplete);
+
+                    }
                 }
-                else{
-                    symbolTable.put(lastIdentifier,new ArrayList<CSymbol>());
-                    incomplete.value = lastToken.token;
-                    incomplete.scope = currentScope;
-                    incomplete.lineNum = lastToken.lineNum;
-                    symbolTable.get(t.token).add(incomplete);
-                        
-                }
-            }
+
         }
         
         if( t != null && t.token.equals("=") && lastToken != null){
