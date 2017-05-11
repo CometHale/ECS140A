@@ -1,0 +1,1 @@
+Used http://shrager.org/llisp/15.html for creating a recursive flatten function
