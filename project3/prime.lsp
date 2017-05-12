@@ -43,7 +43,10 @@
 
 	; (is-prime x (cdr (nums x)))
 	(cond 
-		; check if x is 2 since 2 is the least prime
+		;check if x is less than 2, returh nil if true
+		((< x 2) nil)
+
+		 ; check if x is 2 since 2 is the least prime
 		((= x 2) 2)
 
 		; check if x is a prime by mod of prime numbers between 2 and sqrt(x)
@@ -63,3 +66,4 @@
 	)
 
 )
+
