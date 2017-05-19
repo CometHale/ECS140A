@@ -46,6 +46,27 @@
   )
 )
 
+(defun findSquare(row col) 
+  (cond
+    ((and (<= row 1)
+          (<= col 1))
+        1
+    )
+    ((and (<= row 1)
+          (> col 1))
+        2
+    )
+    ((and (> row 1)
+          (<= col 1))
+      `3
+    )
+    ((and (> row 1)
+          (> col 1))
+      `4
+    )
+
+  )
+);find square that index belongs to
 
 (defun getRow(x row)
   "gets a specified row of the sudoku puzzle"
@@ -64,14 +85,37 @@
   )
 ) ; used Reference #1 on ReadMe.txt (4 Appending Lists)
 
+(defun getIndex(row col)
+  (cond
+    (T (+ (* row 4) col))
+  )
+) ;gets single index from row and col 
+
+(defun updateRow (x val index)
+  (if (= index 0)
+    (cons val (updateRow (cdr x) val (- index 1))) ;update vale
+    (cons (car x) (updateRow (cdr x) val (- index 1)))
+  )
+) ; updates a row
+
+(defun updateBoard(x val index)
+  (cond
+    (T 
+      (list
+        (cons (updateRow (car x) val index) (updateBoard (cdr x) val index))
+      )
+    )
+  )
+)
+
+(defun sudoku (x row col)
+
+) ;use row and col to keep track of indices
+
 (defun sudoku-solver (x) 
   "solves a mini 4x4 sudoku puzzle"
-  (cond 
-   (T (getCol x 1))
+  (cond
+    (T (updateBoard x 2 3))
   )
   
-
-
-
-
 )
