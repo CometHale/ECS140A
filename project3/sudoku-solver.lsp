@@ -142,21 +142,21 @@
       )
     )
   )
-)
+) ; copys the original board but adds in the new value
 
 (defun ifcomp(a x)
   (if (not a)
     (list NIL x)
     (list T a)
   )
-)
+) ; if sudoku is solvable, return (T puzzle) else reutrn NIL
 
 (defun ifcmps(a)
   (if a
     a
     (sudoku x index (+ val 1))
   )
-)
+) ; if sudoku was solvable, return the answer, else we need to backtrack and try again
 
 (defun sudoku (x index val)
   (cond
@@ -168,16 +168,16 @@
     ) ;move on
     
     ( (= (getValue x index) 0)
-      (if (> val 4)
+      (if (> val 4) ; 1-4 only
         nil
-        (if (checkAll (updateBoard x val index) index)
+        (if (checkAll (updateBoard x val index) index) ;if adding 1 2 3 or 4 is valid
           (ifcmps 
-            (sudoku (updateBoard x val index) (+ index 1) 1)
+            (sudoku (updateBoard x val index) (+ index 1) 1) ; if true, then return the solved puzzle, else backtrack
           )
-          (sudoku x index (+ val 1))
+          (sudoku x index (+ val 1)) ;if 1 2 3 or 4 does not work, move on to the next number and try that one (ie. 1 doesnt work, try 2)
         )
       ) ; if checked all possible insertions
-    )
+    ) ; if 0 in index, fill in wit some value
   )
 ) ;use index to keep track of indices
 
@@ -186,5 +186,5 @@
   (ifcomp 
     (sudoku x 0 1)
     x
-  ) ;-1 mmeans unassigned 
+  )
 )
