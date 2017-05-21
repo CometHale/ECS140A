@@ -1,4 +1,65 @@
-(defun wild-match (x y index)
+(defun wild-match (x y index len string_list)
+	; len is the number of chars after the %
+	(write-line "entered wild-match")
+
+
+	(cond
+
+		;exit if % or _ are found
+
+		;
+	)
+
+	; ;check if the substr after % in x is the same as the substr
+	; ;after index(%) in y. If it isn't, return (nil nil)
+	; ;if it is do wild-match
+
+	; (cond
+
+	; 	; if len is greater than the length(x) - index, return
+	; 	(
+	; 		(>  (+ len 1) (- (length x)  index))
+	; 		nil
+	; 	)
+
+	; 	;check if the char in x is a _ -- stop recursing for the %
+	; 	( ;may need to add something more to this
+	; 		(string= (char x index) "_")
+	; 		nil
+	; 	)
+
+	; 	;check if char is %, then concat a nil and keep recursing
+	; 	(
+	; 		(string= (char x index) "%")
+
+	; 		(append
+	; 			nil
+	; 			(wild-match x y index (+ len 1))
+	; 		)
+	; 	)
+
+	; 	;check if the subtring from index(%) to index + len in y fits in x at index(%)
+	; 	;if it does then concat the current character in y to the 
+	; 	;return string, else exit
+
+	; 	;to check whether or not a substring fits in x, compare the substrings
+	; 	;before the position of % in x and y and the substrings after. If both of those are equal
+	; 	;then the substring fits.
+
+	; 	(
+	; 		(and
+
+	; 			(string= 
+	; 				; (substring x 0 (- index 1)) 
+
+	; 			)
+
+	; 			()
+
+	; 		)
+
+	; 	)
+	; )
 
 )
 
@@ -13,6 +74,20 @@
 		(
 			(>  (+ index 1) (length x) )
 			nil
+		)
+
+		;if char at index in x is not equal to char at index in y
+		;and char at index in x isn't % or _, return nil nil
+		(
+			(and
+				(and
+					(string\= (char x index) "%")
+					(string\= (char x index) "_")
+				)
+				(string\= (char x index) (char y index))
+			)
+
+			(nil nil)
 		)
 
 		; if the current char is _, append the char
@@ -31,7 +106,9 @@
 		; probably have a helper function for this
 		(
 			(string= (char x index) "%") 
+
 			(write-line "found a %")
+			(wild-match x y index 0 (list nil)) ; start at the index to match
 			(like-match-extended x y (+ index 1))
 		)
 
@@ -57,7 +134,7 @@
 
 		; if either of the strings are longer than the other, end
 		(
-			(or (> (length x) (length y)) (> (length y) (length x)))
+			(> (length x) (length y))  ; it's okay for x to be shorter than y : "h%" "hello"
 			
 			(list nil nil)
 		)
