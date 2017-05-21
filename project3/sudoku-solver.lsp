@@ -151,7 +151,7 @@
   )
 ) ; if sudoku is solvable, return (T puzzle) else reutrn NIL
 
-(defun ifcmps(a)
+(defun ifcmps(a x index val)
   (if a
     a
     (sudoku x index (+ val 1))
@@ -173,6 +173,9 @@
         (if (checkAll (updateBoard x val index) index) ;if adding 1 2 3 or 4 is valid
           (ifcmps 
             (sudoku (updateBoard x val index) (+ index 1) 1) ; if true, then return the solved puzzle, else backtrack
+            x 
+            index
+            val
           )
           (sudoku x index (+ val 1)) ;if 1 2 3 or 4 does not work, move on to the next number and try that one (ie. 1 doesnt work, try 2)
         )

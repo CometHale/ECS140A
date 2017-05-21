@@ -1,131 +1,93 @@
-(defun wild-match (x y index len string_list)
-	; len is the number of chars after the %
-	(write-line "entered wild-match")
-
-
-	(cond
-
-		;exit if % or _ are found
-
-		;
+(defun wildcard(str num index newstr)
+	(if (and
+				(= num 0)
+				(string= newstr "")
+			) ; if we are taking in 0 characters
+		'(NIL)
+		(if (> (+ index num) (length str))
+			nil
+			(if (= num 0)
+				(list newstr)
+				(wildcard str (- num 1) (+ index 1) (concatenate 'string newstr (string (char str index))))
+			)
+		) ; too many characters
 	)
+) ;take in num amount of characters starting from index
 
-	; ;check if the substr after % in x is the same as the substr
-	; ;after index(%) in y. If it isn't, return (nil nil)
-	; ;if it is do wild-match
-
-	; (cond
-
-	; 	; if len is greater than the length(x) - index, return
-	; 	(
-	; 		(>  (+ len 1) (- (length x)  index))
-	; 		nil
-	; 	)
-
-	; 	;check if the char in x is a _ -- stop recursing for the %
-	; 	( ;may need to add something more to this
-	; 		(string= (char x index) "_")
-	; 		nil
-	; 	)
-
-	; 	;check if char is %, then concat a nil and keep recursing
-	; 	(
-	; 		(string= (char x index) "%")
-
-	; 		(append
-	; 			nil
-	; 			(wild-match x y index (+ len 1))
-	; 		)
-	; 	)
-
-	; 	;check if the subtring from index(%) to index + len in y fits in x at index(%)
-	; 	;if it does then concat the current character in y to the 
-	; 	;return string, else exit
-
-	; 	;to check whether or not a substring fits in x, compare the substrings
-	; 	;before the position of % in x and y and the substrings after. If both of those are equal
-	; 	;then the substring fits.
-
-	; 	(
-	; 		(and
-
-	; 			(string= 
-	; 				; (substring x 0 (- index 1)) 
-
-	; 			)
-
-	; 			()
-
-	; 		)
-
-	; 	)
-	; )
-
+(defun ifcmp(a)
+	(if a
+		(list T a)
+		(list NIL NIL)
+	)
 )
 
-(defun like-match-extended (x y index)
+(defun appendList(li app)
+	(if li
+		(append li app)
+		app
+	) ;if list exists
+)
+
+(defun ifBackTrack(exists x y xindex yindex strings num)
+	(if exists
+		exists
+		(like-match-extended x y xindex yindex strings (+ num 1)) ;try again
+	) ;if exists
+) ;if wildcard fails try again
+
+(defun like-match-extended (x y xindex yindex strings num)
 	; index is the current index being accessed in x
-	(write-line "entered like-match-extended")
-
-
 	(cond
-
-		; if index is greater than the length of x, return
+		; if index is greater than the length of second string (y), return
 		(
-			(>  (+ index 1) (length x) )
-			nil
+			(and 
+				(= yindex (length y))
+				(= xindex (length x))
+			)
+			strings
+			 ;if no wildcard string in the making
 		)
 
-		;if char at index in x is not equal to char at index in y
-		;and char at index in x isn't % or _, return nil nil
 		(
 			(and
-				(and
-					(string\= (char x index) "%")
-					(string\= (char x index) "_")
-				)
-				(string\= (char x index) (char y index))
+				(not (= yindex (length y)))
+				(= xindex (length x))
 			)
-
-			(nil nil)
-		)
-
+			nil
+		) 
 		; if the current char is _, append the char
 		; at index in y to the list and continue recursion
 		(
-			(string= (char x index) #\_) 
-
-			(append
-				(list (string (char y index)))
-				(like-match-extended x y (+ index 1)) 
-				
-			)
+			(string= (char x xindex) #\_) 
+			(like-match-extended x y (+ xindex 1) (+ yindex 1) (appendList strings (list (string (char y yindex)))) 0) 
 		)
 
 		; if current char is % do some shit that is unknown atm
 		; probably have a helper function for this
 		(
-			(string= (char x index) "%") 
-
-			(write-line "found a %")
-			(wild-match x y index 0 (list nil)) ; start at the index to match
-			(like-match-extended x y (+ index 1))
+			(string= (char x xindex) #\%) 
+			(if (wildcard y num yindex "")
+				(ifBackTrack 
+					(like-match-extended x y (+ xindex 1) (+ yindex num) (appendList strings (wildcard y num yindex "")) 0) ; start with wildcard taking 0 characters
+					x y xindex yindex strings num
+				)
+				nil
+			) ; if we can get characters from y
 		)
 
-		; if index is still less than or equal to the length of x, continue recursion
+		; if index is still less than or equal to the length of x, continue recursion (just a regular letter)
 		(
-			(<= (+ index 1) (length x)) 
-			(like-match-extended x y (+ index 1))
+			(<= (+ yindex 1) (length y)) 
+			(if (string= (char x xindex) (char y yindex))
+				(like-match-extended x y (+ xindex 1) (+ yindex 1) strings 0)
+				nil
+			) ; if they do not match, return nil
 		)
 
 	)
 )
 
-
 (defun like-match (x y)
-	
-	(write-line "entered like-match")
-
 	(cond
 
 		; if either of the strings are empty, end
@@ -133,9 +95,15 @@
 		((null y) nil)
 
 		; if either of the strings are longer than the other, end
-		(
-			(> (length x) (length y))  ; it's okay for x to be shorter than y : "h%" "hello"
-			
+		( (and (> (length x) (length y))  ; it's okay for x to be shorter than y : "h%" "hello"
+					 (null (position #\% x))
+			)
+			(list nil nil)
+		)
+
+		( (and (not (null (position #\_ x)))
+					 (null (position #\% x))
+					 (not (= (length x) (length y)))) ; contains underscore and no percents
 			(list nil nil)
 		)
 
@@ -144,8 +112,9 @@
 
 		(; check if there's a % or _
 			(or (not (null (position #\_ x))) (not (null (position #\% x)) ))
-
-			(list t (like-match-extended x y 0))
+			(ifcmp
+				(like-match-extended x y 0 0 '() 0)
+			)
 			
 		)
 
