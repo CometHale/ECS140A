@@ -29,10 +29,20 @@ students_prereq(Student) :- findall(Student, (student(Student, CurrC, Taken), \+
 /* (e) 
 allprereq: finds all prerequisites for a given Course (immediate and non-immediate)
 is_pq: Checks if a course is a prerequisite (recursive)
-
-is_pq(_, []).
-is_pq(Course, [PQH | PQTail]) :- course(PQH, Prereqs, _), is_pq(Prereqs), is_pq(PQTail).
-
-allprereq(Prereqs, Course) :- findall(Prereqs, (course(Course, Prereqs, _), is_pq(Course, Prereqs), Prereqs).
 */
 
+is_pq(X, Prereqs, _) :- member(X, Prereqs).
+is_pq(X, Prereqs, [PQH | PQTail]) :- course(PQH, PQ, _), is_pq(X, PQ, PQ). 
+is_pq(X, Prereqs, [PQH | PQTail]) :- is_pq(X, PQTail, PQTail).
+
+allprereq(Prereqs, Course) :- findall(X, (course(X, _, _), course(Course, PQ, _), is_pq(X, PQ, PQ)), Prereqs), sort(Prereqs).
+
+/* (f)
+student_teach: finds all teachers of a course (input: teachers and a course)
+
+*/
+
+get_teachers(CourseList, [CH | CTail]) :- member(CH, CourseList).
+get_teachers(CourseList, [CH | CTail]) :- get_teachers(CourseList, CTail).
+
+student_teach(Course, Teachers) :- findall(X, (student(Student , CurrC, _), member(Course, CurrC), instructor(X, CourseList), get_teachers(CourseList, CurrC)), Teachers), sort(Teachers).
