@@ -10,6 +10,7 @@ students_prereq(X)
 allprereq(X, Course)
 student_teach(X, Course)
 
+/* PART 2 */
 
 
 
