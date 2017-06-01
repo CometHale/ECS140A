@@ -15,3 +15,4 @@ student_teach(X, Course)
 
 
 References/Sources:
+https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_16.html // For Missionary Cannibal Problem, understanding how to implement DFS in Prolog
