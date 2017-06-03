@@ -11,7 +11,7 @@ allprereq(X, Course)
 student_teach(X, Course)
 
 /* PART 2 */
-
+miss_cannibal(X).
 
 
 References/Sources:
