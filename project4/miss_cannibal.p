@@ -8,13 +8,15 @@ BoatPosition is o if at the origin shore and d if at the destination shore.
 
 start_state([3,3,0,0,o]).
 end_state([0,0,3,3,d]).
+
 /* 
 	safe_config: Is the given configuration a safe one?
 	
 	Safe:
 		NumCannibals >= NumMissionaries on either shore.
 */
-safe_config(CO,MO,CD,MD) :- 
+
+safe_config([CO,MO,CD,MD,_]) :- 
 	CO >= 0, 
 	MO >= 0,
 	CD >= 0, 
@@ -27,114 +29,90 @@ safe_config(CO,MO,CD,MD) :-
 	(CD >= MD;CD is 0).
 
 %% Two Cannibals cross from origin to destination
-move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,o],[CO2,MO,CD2,MD,d],Move) :- 
 	CO2 is CO - 2,
 	CD2 is CD + 2,
-	safe_config(CO2,MO,CD2,MD),
-	\+member([CO2,MO,CD2,MD,d],PreviousConfigs),
-	NextConfig = [CO2,MO,CD2,MD,d],
+	safe_config([CO2,MO,CD2,MD,d]),
 	Move = [2,0,d].
 
 %% Two Cannibals cross from destination to origin
-move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,d],[CO2,MO,CD2,MD,o],Move) :- 
 	CO2 is CO + 2,
 	CD2 is CD - 2,
-	safe_config(CO2,MO,CD2,MD),
-	\+member([CO2,MO,CD2,MD,o],PreviousConfigs),
-	NextConfig = [CO2,MO,CD2,MD,o],
+	safe_config([CO2,MO,CD2,MD,o]),
 	Move = [2,0,o].
 
 %% Two Missionaries cross from origin to destination
-move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,o],[CO,MO2,CD,MD2,d],Move) :- 
 	MO2 is MO - 2,
 	MD2 is MD + 2,
-	safe_config(CO,MO2,CD,MD2),
-	\+member([CO,MO2,CD,MD2,d],PreviousConfigs),
+	safe_config([CO,MO2,CD,MD2,d]),
 	Move = [0,2,d].
 
 %% Two Missionaries cross from destination to origin
-move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,d],[CO,MO2,CD,MD2,o],Move) :-
 	MO2 is MO + 2,
 	MD2 is MD - 2,
-	safe_config(CO,MO2,CD,MD2),
-	\+member([CO,MO2,CD,MD2,o],PreviousConfigs),
-	NextConfig = [CO,MO2,CD,MD2,o],
+	safe_config([CO,MO2,CD,MD2,o]),
 	Move = [0,2,o].
 
 %% %% One Missionary and One Cannibal  cross from origin to destination
-move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d],Move) :- 
 	CO2 is CO - 1,
 	MO2 is MO - 1,
 	CD2 is CD + 1,
 	MD2 is MD + 1,
-	safe_config(CO2,MO2,CD2,MD2),
-	\+member([CO2,MO2,CD2,MD2,d],PreviousConfigs),
-	NextConfig = [CO2,MO2,CD2,MD2,d],
+	safe_config([CO2,MO2,CD2,MD2,d]),
 	Move = [1,1,d].
 
 %% %% One Missionary and One Cannibal  cross from destination to origin
-move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o], NextConfig,PreviousConfigs,Move) :- 
+move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o],Move) :-
 	CO2 is CO + 1,
 	MO2 is MO + 1,
 	CD2 is CD - 1,
 	MD2 is MD - 1,
-	safe_config(CO2,MO2,CD2,MD2),
-	\+member([CO2,MO2,CD2,MD2,o],PreviousConfigs),
-	NextConfig = [CO2,MO2,CD2,MD2,o],
+	safe_config([CO2,MO2,CD2,MD2,o]),
 	Move = [1,1,o].
 
 %% One Missionary cross from origin to destination
-move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d], NextConfig,PreviousConfigs,Move) :-
+move([CO,MO,CD,MD,o],[CO,MO2,CD,MD2,d],Move) :-
 	MO2 is MO - 1,
 	MD2 is MD + 1,
-	safe_config(CO,MO2,CD,MD2),
-	\+member([CO,MO2,CD,MD2,d],PreviousConfigs),
-	NextConfig = [CO,MO2,CD,MD2,d],
+	safe_config([CO,MO2,CD,MD2,d]),
 	Move = [0,1,d].
 
 %% One Missionary cross from destination to origin
-move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o], NextConfig,PreviousConfigs,Move) :-
+move([CO,MO,CD,MD,d],[CO,MO2,CD,MD2,o],Move) :-
 	MO2 is MO + 1,
 	MD2 is MD - 1,
-	safe_config(CO,MO2,CD,MD2),
-	\+member([CO,MO2,CD,MD2,o],PreviousConfigs),
-	NextConfig = [CO,MO2,CD,MD2,o],
+	safe_config([CO,MO2,CD,MD2,o]),
 	Move = [0,1,o].
 
-
 %% One Cannibal cross from origin to destination
-move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d], NextConfig,PreviousConfigs,Move) :-
+move([CO,MO,CD,MD,o],[CO2,MO,CD2,MD,d],Move) :-
 	CO2 is CO - 1,
 	CD2 is CD + 1,
-	safe_config(CO2,MO,CD2,MD),
-	\+member([CO2,MO,CD2,MD,d],PreviousConfigs),
-	NextConfig = [CO2,MO,CD2,MD,d],
+	safe_config([CO2,MO,CD2,MD,d]),
 	Move = [1,0,d].
 
 %% One Cannibal cross from destination to origin
-move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o], NextConfig,PreviousConfigs,Move) :-
+move([CO,MO,CD,MD,d],[CO2,MO,CD2,MD,o],Move) :-
 	CO2 is CO + 1,
 	CD2 is CD - 1,
-	safe_config(CO2,MO,CD2,MD),
-	\+member([CO2,MO,CD2,MD,o],PreviousConfigs),
-	NextConfig = [CO2,MO,CD2,MD,o],
+	safe_config([CO2,MO,CD2,MD,o]),
 	Move = [1,0,o].
 
 %% recursion, used https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_16.html
-dfs([CO,MO,CD,MD,B1],_,_,_) :- 
+dfs([CO,MO,CD,MD,B1],_,_,MoveList,Result) :- 
 	end_state([CO,MO,CD,MD,B1]),
-	write([CO,MO,CD,MD,B1]),
-	write('\n'),
+	Result = MoveList,
 	!.
 
-dfs([CO,MO,CD,MD,B1],B2,PreviousConfigs,MoveList) :-
-	write([CO,MO,CD,MD,B1]),
-	write('\n'),
-	move([CO,MO,CD,MD,B1],[CO2,MO2,CD2,MD2,B2],NextConfig,PreviousConfigs,Temp),
-	write(Temp),
-	write('\n'),
-	dfs(NextConfig,B1,[PreviousConfigs|[NextConfig]],[MoveList|Temp]).
+dfs([CO,MO,CD,MD,B1],B2,PreviousConfigs,MoveList,Result) :-
+	move([CO,MO,CD,MD,B1],[CO2,MO2,CD2,MD2,B2],Temp),
+	\+member([CO2,MO2,CD2,MD2,B2],PreviousConfigs),
+	dfs([CO2,MO2,CD2,MD2,B2],B1,[[CO2,MO2,CD2,MD2,B2]|PreviousConfigs],[Temp|MoveList],Result).
 
 miss_cannibal(X) :- 
 	Start = [3,3,0,0,o], 
-	dfs(Start,d,[Start],[]).
+	dfs(Start,d,[Start],[],X).
