@@ -33,28 +33,28 @@ move([CO,MO,CD,MD,o],[CO2,MO,CD2,MD,d],Move) :-
 	CO2 is CO - 2,
 	CD2 is CD + 2,
 	safe_config([CO2,MO,CD2,MD,d]),
-	Move = [2,0,d].
+	Move = 'cannibal_cannibal ---> destination'.
 
 %% Two Cannibals cross from destination to origin
 move([CO,MO,CD,MD,d],[CO2,MO,CD2,MD,o],Move) :- 
 	CO2 is CO + 2,
 	CD2 is CD - 2,
 	safe_config([CO2,MO,CD2,MD,o]),
-	Move = [2,0,o].
+	Move = 'cannibal_cannibal ---> origin'.
 
 %% Two Missionaries cross from origin to destination
 move([CO,MO,CD,MD,o],[CO,MO2,CD,MD2,d],Move) :- 
 	MO2 is MO - 2,
 	MD2 is MD + 2,
 	safe_config([CO,MO2,CD,MD2,d]),
-	Move = [0,2,d].
+	Move = 'missionary_missionary ---> destination'.
 
 %% Two Missionaries cross from destination to origin
 move([CO,MO,CD,MD,d],[CO,MO2,CD,MD2,o],Move) :-
 	MO2 is MO + 2,
 	MD2 is MD - 2,
 	safe_config([CO,MO2,CD,MD2,o]),
-	Move = [0,2,o].
+	Move = 'missionary_missionary ---> origin'.
 
 %% %% One Missionary and One Cannibal  cross from origin to destination
 move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d],Move) :- 
@@ -63,7 +63,7 @@ move([CO,MO,CD,MD,o],[CO2,MO2,CD2,MD2,d],Move) :-
 	CD2 is CD + 1,
 	MD2 is MD + 1,
 	safe_config([CO2,MO2,CD2,MD2,d]),
-	Move = [1,1,d].
+	Move = 'cannibal_missionary ---> destination'.
 
 %% %% One Missionary and One Cannibal  cross from destination to origin
 move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o],Move) :-
@@ -72,41 +72,40 @@ move([CO,MO,CD,MD,d],[CO2,MO2,CD2,MD2,o],Move) :-
 	CD2 is CD - 1,
 	MD2 is MD - 1,
 	safe_config([CO2,MO2,CD2,MD2,o]),
-	Move = [1,1,o].
+	Move = 'cannibal_missionary ---> origin'.
 
 %% One Missionary cross from origin to destination
 move([CO,MO,CD,MD,o],[CO,MO2,CD,MD2,d],Move) :-
 	MO2 is MO - 1,
 	MD2 is MD + 1,
 	safe_config([CO,MO2,CD,MD2,d]),
-	Move = [0,1,d].
+	Move = 'missionary ---> destination'.
 
 %% One Missionary cross from destination to origin
 move([CO,MO,CD,MD,d],[CO,MO2,CD,MD2,o],Move) :-
 	MO2 is MO + 1,
 	MD2 is MD - 1,
 	safe_config([CO,MO2,CD,MD2,o]),
-	Move = [0,1,o].
+	Move = 'missionary ---> origin'.
 
 %% One Cannibal cross from origin to destination
 move([CO,MO,CD,MD,o],[CO2,MO,CD2,MD,d],Move) :-
 	CO2 is CO - 1,
 	CD2 is CD + 1,
 	safe_config([CO2,MO,CD2,MD,d]),
-	Move = [1,0,d].
+	Move = 'cannibal ---> destination'.
 
 %% One Cannibal cross from destination to origin
 move([CO,MO,CD,MD,d],[CO2,MO,CD2,MD,o],Move) :-
 	CO2 is CO + 1,
 	CD2 is CD - 1,
 	safe_config([CO2,MO,CD2,MD,o]),
-	Move = [1,0,o].
+	Move = 'cannibal ---> origin'.
 
 %% recursion, used https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_16.html
 dfs([CO,MO,CD,MD,B1],_,_,MoveList,Result) :- 
 	end_state([CO,MO,CD,MD,B1]),
-	Result = MoveList,
-	!.
+	Result = MoveList.
 
 dfs([CO,MO,CD,MD,B1],B2,PreviousConfigs,MoveList,Result) :-
 	move([CO,MO,CD,MD,B1],[CO2,MO2,CD2,MD2,B2],Temp),
@@ -115,4 +114,4 @@ dfs([CO,MO,CD,MD,B1],B2,PreviousConfigs,MoveList,Result) :-
 
 miss_cannibal(X) :- 
 	Start = [3,3,0,0,o], 
-	dfs(Start,d,[Start],[],X).
+	dfs(Start,d,[Start],[],X),!.
