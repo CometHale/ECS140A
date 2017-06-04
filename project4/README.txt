@@ -14,5 +14,8 @@ student_teach(X, Course)
 /* PART 2 */
 miss_cannibal(X).
 
+/* PART 3 - takes approx 19 seconds with europe.p*/
+mapcolor(X). 
+
 References/Sources:
 https://www.cpp.edu/~jrfisher/www/prolog_tutorial/2_16.html // For Missionary Cannibal Problem, understanding how to implement DFS in Prolog
